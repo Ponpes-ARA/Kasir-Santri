@@ -219,7 +219,7 @@ input::placeholder{color:#4a7a5a;}
     <div class="form-row">
       <div class="form-group"><label>FOTO (URL/LINK GAMBAR)</label><input type="text" id="iFoto" placeholder="https://... (opsional)"/></div>
     </div>
-    <p class="hint">💡 Foto paling mudah diisi lewat <b>AppSheet</b> (ambil langsung dari kamera HP). Di sini boleh dikosongkan atau tempel link gambar.</p>
+    <p class="hint">💡 Foto: upload ke Google Drive → klik kanan → Bagikan → "Siapa saja yang punya link" → salin link → tempel di sini. Sistem otomatis menampilkannya. Boleh dikosongkan.</p>
     <div class="form-row">
       <div class="form-group"><label>JALAN / DUSUN</label><input type="text" id="iJalan" placeholder="Jl. Merdeka No. 12"/></div>
       <div class="form-group"><label>DESA / KELURAHAN</label><input type="text" id="iDesa" placeholder="Sukamaju"/></div>
@@ -248,6 +248,26 @@ input::placeholder{color:#4a7a5a;}
       <div class="form-group"><label>KETERANGAN</label><input type="text" id="iTopupKet" placeholder="Kiriman orang tua"/></div>
     </div>
     <button class="btn btn-emas" onclick="topupSaldo()" id="btnTopup">💰 Top Up</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📒 Tambah Catatan / Perkembangan</div>
+    <div class="form-row">
+      <div class="form-group"><label>PILIH SANTRI</label>
+        <select id="selCatatan"><option value="">-- Pilih Santri --</option></select>
+      </div>
+      <div class="form-group"><label>KATEGORI</label>
+        <select id="cKategori">
+          <option value="Hafalan">📖 Hafalan</option>
+          <option value="Akademik">🎓 Akademik / Kehadiran</option>
+          <option value="Catatan">📝 Catatan Pondok</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:10px;"><label>JUDUL</label><input type="text" id="cJudul" placeholder="cth: Tambah hafalan, Pelanggaran, Prestasi..."/></div>
+    <div class="form-group" style="margin-bottom:10px;"><label>ISI / KETERANGAN</label><input type="text" id="cIsi" placeholder="Tulis detailnya..."/></div>
+    <button class="btn btn-hijau" onclick="tambahCatatan()" id="btnCatatan">📒 Simpan Catatan</button>
+    <p class="hint" style="margin-top:8px;">Catatan ini tampil di panel profil santri (yang dilihat orang tua saat scan QR). Untuk update "angka terkini" hafalan/kehadiran, gunakan <b>Edit Data</b> di tab Santri.</p>
   </div>
 </div>
 
@@ -450,6 +470,11 @@ input::placeholder{color:#4a7a5a;}
       <div class="form-group"><label>NAMA IBU</label><input type="text" id="eIbu"/></div>
     </div>
     <div class="form-group" style="margin-bottom:10px;"><label>FOTO (URL)</label><input type="text" id="eFoto"/></div>
+    <div class="form-row">
+      <div class="form-group"><label>HAFALAN SAAT INI</label><input type="text" id="eHafalan" placeholder="cth: Juz 5 / 3 Juz"/></div>
+      <div class="form-group"><label>KEHADIRAN</label><input type="text" id="eKehadiran" placeholder="cth: 95% / Baik"/></div>
+    </div>
+    <div class="form-group" style="margin-bottom:10px;"><label>KEAKTIFAN PELAJARAN</label><input type="text" id="eKeaktifan" placeholder="cth: Aktif / Perlu bimbingan"/></div>
     <div class="form-row">
       <div class="form-group"><label>JALAN / DUSUN</label><input type="text" id="eJalan"/></div>
       <div class="form-group"><label>DESA / KELURAHAN</label><input type="text" id="eDesa"/></div>
@@ -662,6 +687,25 @@ async function topupSaldo() {
   await muatStats();
 }
 
+// ==================== CATATAN / PERKEMBANGAN ====================
+async function tambahCatatan() {
+  const nis = document.getElementById('selCatatan').value;
+  const kategori = document.getElementById('cKategori').value;
+  const judul = document.getElementById('cJudul').value.trim();
+  const isi = document.getElementById('cIsi').value.trim();
+  if (!nis) { showToast('Pilih santri!', true); return; }
+  if (!judul && !isi) { showToast('Isi judul atau keterangan!', true); return; }
+
+  setBtnLoading('btnCatatan', true);
+  const d = await apiPost({ action: 'tambahCatatan', nis, kategori, judul, isi });
+  setBtnLoading('btnCatatan', false);
+  if (!d || d.error) { showToast(d?.error || 'Gagal!', true); return; }
+
+  showToast('✅ Catatan ' + kategori + ' tersimpan!');
+  document.getElementById('cJudul').value = '';
+  document.getElementById('cIsi').value = '';
+}
+
 // ==================== KASIR ====================
 // Ambil NIS dari hasil scan (QR berisi URL ?nis=... ATAU NIS polos)
 function ekstrakNis(input) {
@@ -846,7 +890,7 @@ function renderSantri() {
     const rendah = s.saldo < 50000;
     const minus = s.saldo < 0;
     const foto = s.foto
-      ? `<img class="santri-foto" src="${s.foto}" alt=""/>`
+      ? `<img class="santri-foto" src="${konversiFoto(s.foto)}" alt=""/>`
       : `<div class="santri-foto-kosong">🧑‍🎓</div>`;
     const al = alamatRingkas(s);
     return `<div class="santri-card" onclick="bukaModal('${s.nis}')">
@@ -863,7 +907,8 @@ function renderSantri() {
 }
 
 function setAvatar(el, fotoUrl) {
-  if (fotoUrl) el.innerHTML = `<img src="${fotoUrl}" alt=""/>`;
+  const u = konversiFoto(fotoUrl);
+  if (u) el.innerHTML = `<img src="${u}" alt=""/>`;
   else el.innerHTML = '🧑‍🎓';
 }
 
@@ -886,6 +931,9 @@ async function bukaModal(nis) {
   if (s.nik) baris.push('🪪 NIK: ' + s.nik);
   if (s.ayah) baris.push('👨 Ayah: ' + s.ayah);
   if (s.ibu) baris.push('👩 Ibu: ' + s.ibu);
+  if (s.hafalan) baris.push('📖 Hafalan: ' + s.hafalan);
+  if (s.kehadiran) baris.push('🎓 Kehadiran: ' + s.kehadiran);
+  if (s.keaktifan) baris.push('⭐ Keaktifan: ' + s.keaktifan);
   const mOrtu = document.getElementById('mOrtu');
   if (baris.length) { mOrtu.style.display = 'block'; mOrtu.innerHTML = baris.join('<br/>'); }
   else { mOrtu.style.display = 'none'; }
@@ -953,6 +1001,9 @@ function bukaModalEdit() {
   document.getElementById('eAyah').value = s.ayah || '';
   document.getElementById('eIbu').value = s.ibu || '';
   document.getElementById('eFoto').value = s.foto || '';
+  document.getElementById('eHafalan').value = s.hafalan || '';
+  document.getElementById('eKehadiran').value = s.kehadiran || '';
+  document.getElementById('eKeaktifan').value = s.keaktifan || '';
   document.getElementById('eJalan').value = s.jalan || '';
   document.getElementById('eDesa').value = s.desa || '';
   document.getElementById('eKec').value = s.kecamatan || '';
@@ -977,7 +1028,10 @@ async function simpanEdit() {
     kecamatan: document.getElementById('eKec').value.trim(),
     kabupaten: document.getElementById('eKab').value.trim(),
     provinsi:  document.getElementById('eProv').value.trim(),
-    hp:    document.getElementById('eHp').value.trim()
+    hp:    document.getElementById('eHp').value.trim(),
+    hafalan:   document.getElementById('eHafalan').value.trim(),
+    kehadiran: document.getElementById('eKehadiran').value.trim(),
+    keaktifan: document.getElementById('eKeaktifan').value.trim()
   };
 
   setBtnLoading('btnSimpanEdit', true);
@@ -986,7 +1040,7 @@ async function simpanEdit() {
   if (!d || d.error) { showToast(d?.error || 'Gagal menyimpan!', true); return; }
 
   const s = cSantri.find(x => x.nis === currentSantriNis);
-  if (s) Object.assign(s, { nama: data.nama, nik: data.nik, ayah: data.ayah, ibu: data.ibu, kelas: data.kelas, foto: data.foto, jalan: data.jalan, desa: data.desa, kecamatan: data.kecamatan, kabupaten: data.kabupaten, provinsi: data.provinsi, hp: data.hp });
+  if (s) Object.assign(s, { nama: data.nama, nik: data.nik, ayah: data.ayah, ibu: data.ibu, kelas: data.kelas, foto: data.foto, jalan: data.jalan, desa: data.desa, kecamatan: data.kecamatan, kabupaten: data.kabupaten, provinsi: data.provinsi, hp: data.hp, hafalan: data.hafalan, kehadiran: data.kehadiran, keaktifan: data.keaktifan });
 
   showToast('✅ Data santri berhasil diperbarui!');
   tutupModal('modalEdit');
@@ -1161,6 +1215,12 @@ async function setupSheets() {
 }
 
 // ==================== UTILS ====================
+function konversiFoto(url) {
+  if (!url) return '';
+  const m = String(url).match(/\/d\/([a-zA-Z0-9_-]{10,})/) || String(url).match(/[?&]id=([a-zA-Z0-9_-]{10,})/);
+  if (m) return 'https://drive.google.com/thumbnail?id=' + m[1] + '&sz=w1000';
+  return url;
+}
 function fRp(n) {
   n = Number(n) || 0;
   return (n < 0 ? '-Rp ' : 'Rp ') + Math.abs(n).toLocaleString('id-ID');
@@ -1172,13 +1232,18 @@ function fTgl(iso) {
          d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
 }
 function updateSelectSantri() {
-  const sel = document.getElementById('selTopup');
-  const cur = sel.value;
-  sel.innerHTML = '<option value="">-- Pilih Santri --</option>';
-  [...cSantri].sort((a, b) => a.nama.localeCompare(b.nama)).forEach(s => {
-    sel.innerHTML += `<option value="${s.nis}">${s.nama} — ${fRp(s.saldo)}</option>`;
+  const opts = '<option value="">-- Pilih Santri --</option>' +
+    [...cSantri].sort((a, b) => a.nama.localeCompare(b.nama))
+      .map(s => `<option value="${s.nis}">${s.nama}${s.kelas ? ' (' + s.kelas + ')' : ''}</option>`).join('');
+  ['selTopup', 'selCatatan'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const cur = sel.value;
+    sel.innerHTML = (id === 'selTopup')
+      ? '<option value="">-- Pilih Santri --</option>' + [...cSantri].sort((a, b) => a.nama.localeCompare(b.nama)).map(s => `<option value="${s.nis}">${s.nama} — ${fRp(s.saldo)}</option>`).join('')
+      : opts;
+    sel.value = cur;
   });
-  sel.value = cur;
 }
 function showPage(p) {
   if (p !== 'kasir' && _scanAktif) stopScanner();
