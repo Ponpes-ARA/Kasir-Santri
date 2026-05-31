@@ -1,0 +1,1123 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ARA — Sistem Keuangan Santri</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --hijau:#1a7a4a;--hijau-muda:#25a060;--hijau-terang:#2ecc71;
+  --emas:#c9a84c;--emas-muda:#f0c96e;
+  --gelap:#0d1f14;--gelap2:#162a1d;--kartu:#1e3528;--kartu2:#243d2e;
+  --teks:#e8f5ed;--teks2:#9dc9b0;--merah:#e74c3c;--merah-muda:#ff6b6b;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--gelap);color:var(--teks);min-height:100vh;}
+
+.setup-banner{background:linear-gradient(135deg,#7a1a1a,#3d0d0d);border:2px solid #e74c3c;border-radius:14px;padding:20px;margin:16px;display:none;}
+.setup-banner.show{display:block;}
+.setup-banner h3{color:#ff6b6b;margin-bottom:10px;font-size:16px;}
+.setup-banner input{width:100%;padding:10px;border-radius:8px;border:1px solid #e74c3c;background:#1a0808;color:white;font-family:inherit;font-size:13px;margin-bottom:10px;}
+.setup-banner p{font-size:12px;color:#ffaaaa;line-height:1.6;}
+
+.header{background:linear-gradient(135deg,var(--gelap2),#0d2518);border-bottom:2px solid var(--emas);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 4px 20px rgba(0,0,0,.5);}
+.logo{display:flex;align-items:center;gap:10px;}
+.logo-icon{width:40px;height:40px;background:linear-gradient(135deg,var(--emas),var(--emas-muda));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.logo-text{font-family:'Amiri',serif;font-size:15px;color:var(--emas);font-weight:700;line-height:1.2;}
+.logo-sub{font-size:9px;color:var(--teks2);letter-spacing:1.5px;text-transform:uppercase;}
+.conn-dot{width:8px;height:8px;border-radius:50%;background:#555;display:inline-block;margin-right:4px;transition:background .3s;}
+.conn-dot.online{background:var(--hijau-terang);}
+.conn-dot.offline{background:#e74c3c;}
+.conn-status{font-size:10px;color:var(--teks2);display:flex;align-items:center;}
+
+.nav-tabs{display:flex;gap:6px;background:var(--gelap2);padding:10px 14px;border-bottom:1px solid #2a4535;overflow-x:auto;}
+.tab-btn{padding:7px 14px;border-radius:8px;border:none;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:600;background:var(--kartu);color:var(--teks2);transition:all .2s;white-space:nowrap;}
+.tab-btn.active{background:var(--hijau);color:white;}
+
+.page{display:none;padding:16px;max-width:900px;margin:0 auto;}
+.page.active{display:block;}
+
+.card{background:var(--kartu);border-radius:14px;padding:18px;border:1px solid #2a4535;margin-bottom:14px;}
+.card-title{font-size:13px;font-weight:700;color:var(--emas);text-transform:uppercase;letter-spacing:1px;margin-bottom:14px;display:flex;align-items:center;gap:6px;}
+
+.form-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;}
+.form-group{flex:1;min-width:160px;}
+label{font-size:11px;color:var(--teks2);font-weight:600;display:block;margin-bottom:5px;letter-spacing:.5px;}
+input,select{width:100%;padding:9px 12px;border-radius:9px;background:var(--gelap2);border:1px solid #2a4535;color:var(--teks);font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;outline:none;transition:border-color .2s;}
+input:focus,select:focus{border-color:var(--hijau-muda);}
+input::placeholder{color:#4a7a5a;}
+
+.btn{padding:9px 18px;border-radius:9px;border:none;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;transition:all .2s;display:inline-flex;align-items:center;gap:6px;}
+.btn-hijau{background:var(--hijau);color:white;}
+.btn-hijau:hover{background:var(--hijau-muda);}
+.btn-emas{background:linear-gradient(135deg,var(--emas),var(--emas-muda));color:var(--gelap);}
+.btn-merah{background:var(--merah);color:white;}
+.btn-outline{background:transparent;border:1px solid var(--hijau);color:var(--hijau-muda);}
+.btn-sm{padding:5px 10px;font-size:11px;border-radius:7px;}
+.btn-full{width:100%;justify-content:center;padding:12px;font-size:14px;}
+
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:16px;}
+.stat-card{background:var(--kartu2);border-radius:11px;padding:12px;border:1px solid #2a4535;text-align:center;}
+.stat-val{font-size:20px;font-weight:800;color:var(--emas-muda);}
+.stat-label{font-size:10px;color:var(--teks2);margin-top:3px;}
+
+.santri-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;}
+.santri-card{background:var(--kartu2);border-radius:12px;padding:14px;border:1px solid #2a4535;transition:all .2s;cursor:pointer;position:relative;overflow:hidden;}
+.santri-card:hover{border-color:var(--hijau-muda);transform:translateY(-2px);}
+.santri-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--hijau),var(--emas));}
+.santri-top{display:flex;gap:10px;align-items:center;margin-bottom:8px;}
+.santri-foto{width:46px;height:46px;border-radius:10px;object-fit:cover;border:2px solid var(--emas);flex-shrink:0;}
+.santri-foto-kosong{width:46px;height:46px;border-radius:10px;background:linear-gradient(135deg,var(--hijau),var(--emas));display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
+.santri-nama{font-weight:700;font-size:14px;color:var(--teks);}
+.santri-id{font-size:10px;color:var(--teks2);font-family:monospace;}
+.santri-saldo{font-size:18px;font-weight:800;color:var(--hijau-terang);}
+.santri-saldo.rendah{color:var(--merah-muda);}
+.santri-kamar{font-size:10px;color:var(--teks2);margin-top:3px;}
+.santri-alamat{font-size:10px;color:var(--teks2);margin-top:3px;line-height:1.4;}
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;}
+.badge-hijau{background:rgba(46,204,113,.15);color:var(--hijau-terang);border:1px solid rgba(46,204,113,.3);}
+.badge-merah{background:rgba(231,76,60,.15);color:var(--merah-muda);border:1px solid rgba(231,76,60,.3);}
+
+.trx-list{display:flex;flex-direction:column;gap:7px;}
+.trx-item{background:var(--kartu2);border-radius:9px;padding:10px 14px;display:flex;align-items:center;gap:10px;border:1px solid #1e3528;}
+.trx-icon{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+.trx-icon.belanja{background:rgba(231,76,60,.15);}
+.trx-icon.topup{background:rgba(46,204,113,.15);}
+.trx-info{flex:1;}
+.trx-nama{font-size:12px;font-weight:600;color:var(--teks);}
+.trx-detail{font-size:10px;color:var(--teks2);margin-top:2px;}
+.trx-jumlah{font-weight:800;font-size:14px;}
+.trx-jumlah.minus{color:var(--merah-muda);}
+.trx-jumlah.plus{color:var(--hijau-terang);}
+
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--kartu);border-radius:18px;padding:22px;max-width:460px;width:92%;border:1px solid var(--emas);box-shadow:0 20px 60px rgba(0,0,0,.6);max-height:88vh;overflow-y:auto;}
+.modal-title{font-size:17px;font-weight:800;color:var(--emas);margin-bottom:18px;}
+.modal-close{float:right;background:none;border:none;color:var(--teks2);font-size:20px;cursor:pointer;margin-top:-4px;}
+
+.scan-area{background:var(--kartu2);border-radius:14px;padding:20px;text-align:center;border:2px dashed #2a4535;}
+.scan-icon{font-size:44px;margin-bottom:10px;}
+.item-row{display:flex;gap:7px;margin-bottom:7px;align-items:center;}
+.item-row input{flex:1;}
+.item-row input.harga{max-width:120px;}
+.total-box{background:var(--gelap2);border-radius:10px;padding:12px;text-align:center;margin:10px 0;}
+.total-angka{font-size:26px;font-weight:800;color:var(--emas-muda);}
+
+.profil-header{display:flex;align-items:center;gap:14px;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid #2a4535;}
+.profil-avatar{width:54px;height:54px;border-radius:14px;background:linear-gradient(135deg,var(--hijau),var(--emas));display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;overflow:hidden;}
+.profil-avatar img{width:100%;height:100%;object-fit:cover;}
+.profil-saldo{font-size:24px;font-weight:800;color:var(--hijau-terang);}
+.profil-saldo.rendah{color:var(--merah-muda);}
+
+.qr-wrapper{background:white;border-radius:12px;padding:16px;display:inline-flex;flex-direction:column;align-items:center;gap:7px;max-width:200px;}
+.qr-nama{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;color:#0d1f14;font-size:12px;text-align:center;}
+.qr-id{font-family:monospace;color:#666;font-size:9px;}
+
+.search-box{position:relative;margin-bottom:14px;}
+.search-box input{padding-left:36px;}
+.search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--teks2);}
+
+.filter-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+.filter-btn{padding:5px 12px;border-radius:20px;border:1px solid #2a4535;background:var(--kartu2);color:var(--teks2);font-size:11px;cursor:pointer;font-family:inherit;}
+.filter-btn.active{background:var(--hijau);border-color:var(--hijau);color:white;}
+
+.toast{position:fixed;top:16px;right:16px;z-index:999;background:var(--hijau);color:white;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.4);transform:translateX(120%);transition:transform .3s;max-width:280px;}
+.toast.show{transform:translateX(0);}
+.toast.error{background:var(--merah);}
+
+.loading{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:white;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.empty-state{text-align:center;padding:32px;color:var(--teks2);}
+.empty-state .icon{font-size:40px;margin-bottom:10px;}
+
+@media print{
+  .header,.nav-tabs,.no-print{display:none!important;}
+  .qr-wrapper{border:2px solid #000;break-inside:avoid;}
+  .print-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;padding:16px;}
+}
+
+.saldo-bar-wrap{display:flex;gap:3px;margin-top:5px;height:4px;}
+.saldo-bar-fill{border-radius:2px;transition:width .3s;}
+.saldo-bar-bg{border-radius:2px;background:#2a4535;flex:1;}
+.divider{border:none;border-top:1px solid #2a4535;margin:14px 0;}
+.hint{font-size:10px;color:var(--teks2);margin-top:-4px;margin-bottom:10px;line-height:1.5;}
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<!-- SETUP BANNER -->
+<div class="setup-banner" id="setupBanner">
+  <h3>⚙️ Hubungkan ke Google Sheets</h3>
+  <p>Masukkan URL Web App dari Google Apps Script Anda:</p>
+  <input type="text" id="inputWebAppUrl" placeholder="https://script.google.com/macros/s/XXXX/exec"/>
+  <div style="display:flex;gap:8px;margin-top:4px;">
+    <button class="btn btn-hijau btn-sm" onclick="simpanUrl()">💾 Simpan & Hubungkan</button>
+    <button class="btn btn-outline btn-sm" onclick="tesKoneksi()">🔌 Tes Koneksi</button>
+  </div>
+  <p style="margin-top:10px;font-size:11px;">📖 Lihat panduan di file <b>PANDUAN_SETUP.md</b></p>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon">🕌</div>
+    <div>
+      <div class="logo-text">Pesantren Abu Hurairah Ra.</div>
+      <div class="logo-sub">Sistem Keuangan Santri · ARA</div>
+    </div>
+  </div>
+  <div style="text-align:right;">
+    <div class="conn-status"><span class="conn-dot" id="connDot"></span><span id="connText">Memuat...</span></div>
+    <div style="font-size:18px;font-weight:800;color:var(--emas);margin-top:2px;" id="headerJumlah">–</div>
+    <div style="font-size:9px;color:var(--teks2);">santri</div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="nav-tabs">
+  <button class="tab-btn active" onclick="showPage('admin')" id="tab-admin">👑 Admin</button>
+  <button class="tab-btn" onclick="showPage('kasir')" id="tab-kasir">🔍 Kasir</button>
+  <button class="tab-btn" onclick="showPage('santri')" id="tab-santri">📋 Santri</button>
+  <button class="tab-btn" onclick="showPage('laporan')" id="tab-laporan">📊 Laporan</button>
+  <button class="tab-btn" onclick="showPage('cetak')" id="tab-cetak">🖨️ Cetak QR</button>
+  <button class="tab-btn" onclick="showPage('pengaturan')" id="tab-pengaturan">⚙️ Pengaturan</button>
+</div>
+
+<!-- ======== ADMIN ======== -->
+<div class="page active" id="page-admin">
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-val" id="stSantri">–</div><div class="stat-label">Total Santri</div></div>
+    <div class="stat-card"><div class="stat-val" id="stSaldo">–</div><div class="stat-label">Total Saldo</div></div>
+    <div class="stat-card"><div class="stat-val" id="stTrx">–</div><div class="stat-label">Trx Hari Ini</div></div>
+    <div class="stat-card"><div class="stat-val" id="stRendah">–</div><div class="stat-label">Saldo Rendah</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">➕ Tambah Santri Baru</div>
+    <div class="form-row">
+      <div class="form-group"><label>NIS (NO. INDUK SANTRI) *</label><input type="text" id="iNis" placeholder="2024001"/></div>
+      <div class="form-group"><label>NAMA LENGKAP *</label><input type="text" id="iNama" placeholder="Ahmad Fauzi"/></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>KELAS / KAMAR</label><input type="text" id="iKelas" placeholder="Kelas 3A / Al-Fatih"/></div>
+      <div class="form-group"><label>FOTO (URL/LINK GAMBAR)</label><input type="text" id="iFoto" placeholder="https://... (opsional)"/></div>
+    </div>
+    <p class="hint">💡 Foto paling mudah diisi lewat <b>AppSheet</b> (ambil langsung dari kamera HP). Di sini boleh dikosongkan atau tempel link gambar.</p>
+    <div class="form-row">
+      <div class="form-group"><label>JALAN / DUSUN</label><input type="text" id="iJalan" placeholder="Jl. Merdeka No. 12"/></div>
+      <div class="form-group"><label>DESA / KELURAHAN</label><input type="text" id="iDesa" placeholder="Sukamaju"/></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>KECAMATAN</label><input type="text" id="iKec" placeholder="Cibadak"/></div>
+      <div class="form-group"><label>KABUPATEN / KOTA</label><input type="text" id="iKab" placeholder="Sukabumi"/></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>PROVINSI</label><input type="text" id="iProv" placeholder="Jawa Barat"/></div>
+      <div class="form-group"><label>NO. HP ORANG TUA</label><input type="text" id="iHp" placeholder="08123456789"/></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>SALDO AWAL (Rp)</label><input type="number" id="iSaldo" placeholder="100000" min="0"/></div>
+    </div>
+    <button class="btn btn-hijau" onclick="tambahSantri()" id="btnTambah">➕ Tambah Santri</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">💰 Top Up Saldo</div>
+    <div class="form-row">
+      <div class="form-group"><label>PILIH SANTRI</label>
+        <select id="selTopup"><option value="">-- Pilih Santri --</option></select>
+      </div>
+      <div class="form-group"><label>JUMLAH (Rp)</label><input type="number" id="iTopupJml" placeholder="50000" min="1000"/></div>
+      <div class="form-group"><label>KETERANGAN</label><input type="text" id="iTopupKet" placeholder="Kiriman orang tua"/></div>
+    </div>
+    <button class="btn btn-emas" onclick="topupSaldo()" id="btnTopup">💰 Top Up</button>
+  </div>
+</div>
+
+<!-- ======== KASIR ======== -->
+<div class="page" id="page-kasir">
+  <div class="card">
+    <div class="card-title">🔍 Cari / Scan Santri</div>
+    <div class="scan-area">
+      <div class="scan-icon">📷</div>
+      <p style="font-size:12px;color:var(--teks2);margin-bottom:12px;">Scan QR, masukkan NIS, atau ketik nama santri</p>
+      <div style="display:flex;gap:7px;max-width:380px;margin:0 auto;">
+        <input type="text" id="iScan" placeholder="NIS / hasil scan / nama..." style="flex:1;" onkeydown="if(event.key==='Enter')cariKasir()"/>
+        <button class="btn btn-hijau" onclick="cariKasir()">🔍</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="kasirProfil" style="display:none;">
+    <div class="card">
+      <div class="profil-header">
+        <div class="profil-avatar" id="kAvatar">🧑‍🎓</div>
+        <div style="flex:1;">
+          <div style="font-size:16px;font-weight:800;" id="kNama">–</div>
+          <div style="font-size:11px;color:var(--teks2);" id="kKamar">–</div>
+          <div style="font-size:10px;color:var(--teks2);font-family:monospace;" id="kId">–</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:10px;color:var(--teks2);">SALDO</div>
+          <div class="profil-saldo" id="kSaldo">Rp 0</div>
+        </div>
+      </div>
+      <div class="card-title">🛒 Input Belanja</div>
+      <div id="kItems">
+        <div class="item-row">
+          <input type="text" placeholder="Nama barang" class="item-nama" oninput="hitungTotal()"/>
+          <input type="number" placeholder="Harga" class="item-harga harga" min="100" oninput="hitungTotal()"/>
+          <button class="btn btn-merah btn-sm" onclick="hapusItemRow(this)">✕</button>
+        </div>
+      </div>
+      <button class="btn btn-outline btn-sm" onclick="tambahItemRow()" style="margin-bottom:10px;">+ Item</button>
+      <div class="total-box">
+        <div style="font-size:11px;color:var(--teks2);margin-bottom:3px;">TOTAL</div>
+        <div class="total-angka" id="kTotal">Rp 0</div>
+      </div>
+      <div class="form-row"><div class="form-group"><label>KETERANGAN</label><input type="text" id="kKet" placeholder="Kantin, koperasi..."/></div></div>
+      <div style="display:flex;gap:7px;">
+        <button class="btn btn-hijau btn-full" onclick="prosesBelanja()" id="btnBelanja">✅ Proses</button>
+        <button class="btn btn-outline btn-sm" onclick="batalKasir()">✕</button>
+      </div>
+    </div>
+    <div class="card"><div class="card-title">📜 Riwayat Terakhir</div><div id="kRiwayat" class="trx-list"></div></div>
+  </div>
+</div>
+
+<!-- ======== DAFTAR SANTRI ======== -->
+<div class="page" id="page-santri">
+  <div class="card">
+    <div class="card-title">📋 Daftar Santri</div>
+    <div style="display:flex;gap:7px;margin-bottom:10px;">
+      <div class="search-box" style="flex:1;margin:0;">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="srchSantri" placeholder="Cari nama / NIS..." oninput="renderSantri()"/>
+      </div>
+      <button class="btn btn-outline btn-sm" onclick="muatSantri()">🔄</button>
+    </div>
+    <div class="filter-row">
+      <button class="filter-btn active" onclick="setFilterSantri('semua',this)">Semua</button>
+      <button class="filter-btn" onclick="setFilterSantri('rendah',this)">⚠️ Saldo Rendah</button>
+      <button class="filter-btn" onclick="setFilterSantri('habis',this)">🔴 Habis</button>
+    </div>
+    <div class="santri-grid" id="gridSantri"></div>
+  </div>
+</div>
+
+<!-- ======== LAPORAN ======== -->
+<div class="page" id="page-laporan">
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-val" id="lapBelanja">–</div><div class="stat-label">Belanja Hari Ini</div></div>
+    <div class="stat-card"><div class="stat-val" id="lapTopup">–</div><div class="stat-label">Top Up Hari Ini</div></div>
+    <div class="stat-card"><div class="stat-val" id="lapTrx">–</div><div class="stat-label">Total Trx Hari Ini</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">📊 Semua Transaksi</div>
+    <div class="filter-row">
+      <button class="filter-btn active" onclick="setFilterLap('semua',this)">Semua</button>
+      <button class="filter-btn" onclick="setFilterLap('belanja',this)">🛒 Belanja</button>
+      <button class="filter-btn" onclick="setFilterLap('topup',this)">💰 Top Up</button>
+      <button class="btn btn-outline btn-sm" onclick="muatLaporan()" style="margin-left:auto;">🔄</button>
+    </div>
+    <div id="listLaporan" class="trx-list"></div>
+  </div>
+</div>
+
+<!-- ======== CETAK QR ======== -->
+<div class="page" id="page-cetak">
+  <div class="card no-print">
+    <div class="card-title">🖨️ Cetak Kartu QR Santri</div>
+    <p style="font-size:12px;color:var(--teks2);line-height:1.6;margin-bottom:12px;">
+      Setiap QR berisi NIS santri. Bila di-scan kamera HP akan membuka halaman profil (foto, alamat, saldo, riwayat). Bila di-scan di Kasir, langsung untuk pembayaran.
+    </p>
+    <div style="display:flex;gap:7px;flex-wrap:wrap;">
+      <button class="btn btn-emas" onclick="window.print()">🖨️ Cetak Semua</button>
+      <button class="btn btn-outline" onclick="renderCetak()">🔄 Refresh</button>
+    </div>
+  </div>
+  <div class="print-grid" id="gridCetak" style="display:flex;flex-wrap:wrap;gap:12px;padding:4px;"></div>
+</div>
+
+<!-- ======== PENGATURAN ======== -->
+<div class="page" id="page-pengaturan">
+  <div class="card">
+    <div class="card-title">⚙️ Koneksi Google Sheets</div>
+    <div class="form-group" style="margin-bottom:12px;">
+      <label>URL WEB APP (Google Apps Script)</label>
+      <input type="text" id="iUrl" placeholder="https://script.google.com/macros/s/.../exec"/>
+    </div>
+    <div style="display:flex;gap:7px;flex-wrap:wrap;">
+      <button class="btn btn-hijau" onclick="simpanUrl()">💾 Simpan</button>
+      <button class="btn btn-outline" onclick="tesKoneksi()">🔌 Tes Koneksi</button>
+      <button class="btn btn-outline" onclick="setupSheets()">🔧 Setup Sheets</button>
+    </div>
+    <hr class="divider"/>
+    <p style="font-size:12px;color:var(--teks2);line-height:1.7;">
+      <b style="color:var(--emas);">Status:</b> <span id="statusKoneksi">Belum dikonfigurasi</span><br/>
+      <b style="color:var(--emas);">Data disimpan di:</b> Google Sheets Anda<br/>
+      <b style="color:var(--emas);">Akses multi-perangkat:</b> ✅ Ya<br/>
+      <b style="color:var(--emas);">Orang tua pantau:</b> ✅ Scan QR kartu santri
+    </p>
+  </div>
+  <div class="card">
+    <div class="card-title">📱 Input dari HP via AppSheet</div>
+    <p style="font-size:12px;color:var(--teks2);line-height:1.8;">
+      1. Buka <b style="color:var(--emas);">appsheet.com</b> → login dengan akun Google yang sama dengan Sheets<br/>
+      2. <b style="color:var(--emas);">Create → App → Start with existing data</b> → pilih spreadsheet ini<br/>
+      3. AppSheet otomatis baca sheet <b style="color:var(--emas);">Santri</b> & <b style="color:var(--emas);">Transaksi</b><br/>
+      4. Set kolom <b>Foto</b> bertipe <b>Image</b>, kolom <b>NIS</b> sebagai <b>Key</b><br/>
+      5. Tambah view <b>Form</b> untuk input santri + <b>Scan</b> (QR/Barcode) yang mencari berdasarkan NIS<br/><br/>
+      <span style="color:var(--hijau-terang);">💡 Detail lengkap ada di file PANDUAN_SETUP.md</span>
+    </p>
+  </div>
+</div>
+
+<!-- MODAL DETAIL SANTRI -->
+<div class="modal-overlay" id="modalSantri">
+  <div class="modal">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div class="modal-title" id="mNama">–</div>
+      <button class="modal-close" onclick="tutupModal('modalSantri')">✕</button>
+    </div>
+    <div class="profil-header">
+      <div class="profil-avatar" id="mAvatar">🧑‍🎓</div>
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:600;" id="mKamar">–</div>
+        <div style="font-size:10px;color:var(--teks2);font-family:monospace;" id="mId">–</div>
+        <div style="font-size:11px;color:var(--teks2);" id="mHp">–</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:10px;color:var(--teks2);">SALDO</div>
+        <div class="profil-saldo" id="mSaldo">–</div>
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--teks2);background:var(--gelap2);border-radius:10px;padding:10px 12px;margin-bottom:14px;line-height:1.6;" id="mAlamat">📍 –</div>
+    <div style="text-align:center;margin-bottom:14px;">
+      <div class="qr-wrapper" style="margin:0 auto;" id="mQR"></div>
+    </div>
+    <hr class="divider"/>
+    <div class="card-title">📜 Riwayat <span style="font-size:10px;color:var(--teks2);font-weight:400;text-transform:none;">(klik 🗑️ untuk hapus transaksi)</span></div>
+    <div id="mRiwayat" class="trx-list" style="max-height:200px;overflow-y:auto;"></div>
+    <hr class="divider"/>
+    <div style="display:flex;gap:7px;flex-wrap:wrap;">
+      <button class="btn btn-hijau btn-sm" onclick="bukaModalEdit()">✏️ Edit Data</button>
+      <button class="btn btn-outline btn-sm" onclick="bukaModalKoreksi()">💰 Koreksi Saldo</button>
+      <button class="btn btn-merah btn-sm" onclick="hapusSantri()">🗑️ Hapus Santri</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDIT DATA SANTRI -->
+<div class="modal-overlay" id="modalEdit">
+  <div class="modal">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div class="modal-title">✏️ Edit Data Santri</div>
+      <button class="modal-close" onclick="tutupModal('modalEdit')">✕</button>
+    </div>
+    <p class="hint" style="margin-bottom:12px;">NIS tidak bisa diubah (dipakai sebagai kunci data).</p>
+    <div class="form-row">
+      <div class="form-group"><label>NAMA LENGKAP</label><input type="text" id="eNama"/></div>
+      <div class="form-group"><label>KELAS / KAMAR</label><input type="text" id="eKelas"/></div>
+    </div>
+    <div class="form-group" style="margin-bottom:10px;"><label>FOTO (URL)</label><input type="text" id="eFoto"/></div>
+    <div class="form-row">
+      <div class="form-group"><label>JALAN / DUSUN</label><input type="text" id="eJalan"/></div>
+      <div class="form-group"><label>DESA / KELURAHAN</label><input type="text" id="eDesa"/></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>KECAMATAN</label><input type="text" id="eKec"/></div>
+      <div class="form-group"><label>KABUPATEN / KOTA</label><input type="text" id="eKab"/></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>PROVINSI</label><input type="text" id="eProv"/></div>
+      <div class="form-group"><label>NO. HP ORANG TUA</label><input type="text" id="eHp"/></div>
+    </div>
+    <div style="display:flex;gap:7px;margin-top:6px;">
+      <button class="btn btn-hijau btn-full" onclick="simpanEdit()" id="btnSimpanEdit">💾 Simpan Perubahan</button>
+      <button class="btn btn-outline" onclick="tutupModal('modalEdit')">Batal</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL KOREKSI SALDO -->
+<div class="modal-overlay" id="modalKoreksi">
+  <div class="modal">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div class="modal-title">💰 Koreksi Saldo</div>
+      <button class="modal-close" onclick="tutupModal('modalKoreksi')">✕</button>
+    </div>
+    <p style="font-size:12px;color:var(--teks2);margin-bottom:12px;">Gunakan ini untuk memperbaiki saldo jika ada kesalahan input. Saldo baru akan menggantikan saldo saat ini.</p>
+    <div style="background:var(--gelap2);border-radius:10px;padding:12px;text-align:center;margin-bottom:12px;">
+      <div style="font-size:11px;color:var(--teks2);">SALDO SAAT INI</div>
+      <div style="font-size:24px;font-weight:800;color:var(--emas-muda);" id="koreksiSaldoSekarang">–</div>
+    </div>
+    <div class="form-group" style="margin-bottom:10px;">
+      <label>SALDO BARU (Rp)</label>
+      <input type="number" id="koreksiSaldoBaru" placeholder="Nominal saldo yang benar" min="0"/>
+    </div>
+    <div class="form-group" style="margin-bottom:16px;">
+      <label>ALASAN KOREKSI</label>
+      <input type="text" id="koreksiAlasan" placeholder="Contoh: Koreksi kesalahan input"/>
+    </div>
+    <div style="display:flex;gap:7px;">
+      <button class="btn btn-emas btn-full" onclick="simpanKoreksi()" id="btnSimpanKoreksi">✅ Terapkan Koreksi</button>
+      <button class="btn btn-outline" onclick="tutupModal('modalKoreksi')">Batal</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL HAPUS TRANSAKSI -->
+<div class="modal-overlay" id="modalHapusTrx">
+  <div class="modal">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div class="modal-title">🗑️ Hapus Transaksi</div>
+      <button class="modal-close" onclick="tutupModal('modalHapusTrx')">✕</button>
+    </div>
+    <div style="background:var(--gelap2);border-radius:10px;padding:14px;margin-bottom:14px;" id="detailTrxHapus"></div>
+    <p style="font-size:12px;color:var(--merah-muda);margin-bottom:14px;">⚠️ Jika transaksi belanja, saldo santri akan dikembalikan. Tindakan ini tidak bisa dibatalkan.</p>
+    <div style="display:flex;gap:7px;">
+      <button class="btn btn-merah btn-full" onclick="konfirmasiHapusTrx()" id="btnKonfirmasiHapusTrx">🗑️ Ya, Hapus</button>
+      <button class="btn btn-outline" onclick="tutupModal('modalHapusTrx')">Batal</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==================== CONFIG ====================
+let WEB_APP_URL = localStorage.getItem('ara_webappurl') || '';
+let cSantri = [];
+let cTrx = [];
+let filterSantri = 'semua';
+let filterLap = 'semua';
+let currentSantriNis = null;
+let currentKasirNis = null;
+
+// ==================== INIT ====================
+window.onload = () => {
+  if (WEB_APP_URL) {
+    document.getElementById('iUrl').value = WEB_APP_URL;
+    document.getElementById('inputWebAppUrl').value = WEB_APP_URL;
+    mulaiMuat();
+  } else {
+    document.getElementById('setupBanner').classList.add('show');
+    setConn(false, 'Belum dikonfigurasi');
+  }
+};
+
+function mulaiMuat() { muatStats(); muatSantri(); }
+
+// ==================== API (JSONP) ====================
+function apiGet(params) {
+  return new Promise((resolve) => {
+    if (!WEB_APP_URL) { showToast('URL belum diatur!', true); resolve(null); return; }
+    const cbName = 'cb_' + Date.now() + '_' + Math.floor(Math.random() * 9999);
+    const timer = setTimeout(() => {
+      delete window[cbName];
+      if (document.getElementById(cbName)) document.getElementById(cbName).remove();
+      showToast('Koneksi timeout. Coba lagi.', true);
+      setConn(false, 'Offline');
+      resolve(null);
+    }, 12000);
+    window[cbName] = function (data) {
+      clearTimeout(timer);
+      delete window[cbName];
+      const el = document.getElementById(cbName);
+      if (el) el.remove();
+      setConn(true, 'Online');
+      resolve(data);
+    };
+    const p = Object.assign({}, params, { callback: cbName });
+    const url = WEB_APP_URL + '?' + new URLSearchParams(p);
+    const script = document.createElement('script');
+    script.id = cbName;
+    script.src = url;
+    script.onerror = () => {
+      clearTimeout(timer);
+      delete window[cbName];
+      script.remove();
+      showToast('Gagal koneksi! Cek URL & deployment.', true);
+      setConn(false, 'Offline');
+      resolve(null);
+    };
+    document.head.appendChild(script);
+  });
+}
+async function apiPost(params) { return await apiGet(params); }
+
+// ==================== LOAD DATA ====================
+async function muatStats() {
+  const d = await apiGet({ action: 'getStats' });
+  if (!d) return;
+  if (d.error) { showToast('⚠️ ' + d.error, true); return; }
+  setConn(true, 'Online');
+  document.getElementById('stSantri').textContent = d.totalSantri || 0;
+  document.getElementById('stSaldo').textContent = fRp(d.totalSaldo || 0);
+  document.getElementById('stTrx').textContent = d.trxHariIni || 0;
+  document.getElementById('stRendah').textContent = d.saldoRendah || 0;
+  document.getElementById('headerJumlah').textContent = d.totalSantri || 0;
+  document.getElementById('lapBelanja').textContent = fRp(d.belanjaHariIni || 0);
+  document.getElementById('lapTopup').textContent = fRp(d.topupHariIni || 0);
+  document.getElementById('lapTrx').textContent = d.trxHariIni || 0;
+}
+
+async function muatSantri() {
+  const d = await apiGet({ action: 'getSantri' });
+  if (!d) return;
+  if (d.error) { showToast('⚠️ ' + d.error, true); return; }
+  setConn(true, 'Online');
+  cSantri = d.santri || [];
+  updateSelectSantri();
+  renderSantri();
+}
+
+async function muatLaporan() {
+  const d = await apiGet({ action: 'getTransaksi' });
+  if (!d) return;
+  cTrx = d.transaksi || [];
+  renderLaporan();
+}
+
+// ==================== TAMBAH SANTRI ====================
+async function tambahSantri() {
+  const nis  = document.getElementById('iNis').value.trim();
+  const nama = document.getElementById('iNama').value.trim();
+  if (!nis)  { showToast('NIS wajib diisi!', true); return; }
+  if (!nama) { showToast('Nama wajib diisi!', true); return; }
+
+  const data = {
+    action: 'tambahSantri', nis, nama,
+    kelas: document.getElementById('iKelas').value.trim(),
+    foto:  document.getElementById('iFoto').value.trim(),
+    jalan: document.getElementById('iJalan').value.trim(),
+    desa:  document.getElementById('iDesa').value.trim(),
+    kecamatan: document.getElementById('iKec').value.trim(),
+    kabupaten: document.getElementById('iKab').value.trim(),
+    provinsi:  document.getElementById('iProv').value.trim(),
+    hp:    document.getElementById('iHp').value.trim(),
+    saldo: parseInt(document.getElementById('iSaldo').value) || 0
+  };
+
+  setBtnLoading('btnTambah', true);
+  const d = await apiPost(data);
+  setBtnLoading('btnTambah', false);
+  if (!d || d.error) { showToast(d?.error || 'Gagal!', true); return; }
+
+  showToast('✅ ' + nama + ' (NIS ' + nis + ') berhasil ditambahkan!');
+  ['iNis','iNama','iKelas','iFoto','iJalan','iDesa','iKec','iKab','iProv','iHp','iSaldo']
+    .forEach(id => document.getElementById(id).value = '');
+  await muatSantri();
+  await muatStats();
+}
+
+// ==================== TOP UP ====================
+async function topupSaldo() {
+  const nis = document.getElementById('selTopup').value;
+  const jumlah = parseInt(document.getElementById('iTopupJml').value);
+  const keterangan = document.getElementById('iTopupKet').value || 'Top Up';
+  if (!nis) { showToast('Pilih santri!', true); return; }
+  if (!jumlah || jumlah < 1000) { showToast('Minimal Rp 1.000!', true); return; }
+
+  setBtnLoading('btnTopup', true);
+  const d = await apiPost({ action: 'topupSaldo', nis, jumlah, keterangan });
+  setBtnLoading('btnTopup', false);
+  if (!d || d.error) { showToast(d?.error || 'Gagal!', true); return; }
+
+  showToast('💰 Top up ' + fRp(jumlah) + ' berhasil! Saldo: ' + fRp(d.saldoBaru));
+  document.getElementById('iTopupJml').value = '';
+  document.getElementById('iTopupKet').value = '';
+  await muatSantri();
+  await muatStats();
+}
+
+// ==================== KASIR ====================
+// Ambil NIS dari hasil scan (QR berisi URL ?nis=... ATAU NIS polos)
+function ekstrakNis(input) {
+  const t = (input || '').trim();
+  const m = t.match(/[?&]nis=([^&\s]+)/i);
+  if (m) return decodeURIComponent(m[1]);
+  return t;
+}
+
+async function cariKasir() {
+  const raw = document.getElementById('iScan').value;
+  const q = ekstrakNis(raw);
+  if (!q) return;
+
+  let s = cSantri.find(x => x.nis.toLowerCase() === q.toLowerCase());
+  if (!s) s = cSantri.find(x => x.nama.toLowerCase().includes(q.toLowerCase()));
+  if (!s) {
+    const d = await apiGet({ action: 'getSantri', nis: q });
+    if (d && d.santri) s = d.santri;
+  }
+  if (!s) { showToast('Santri tidak ditemukan!', true); return; }
+
+  currentKasirNis = s.nis;
+  document.getElementById('kNama').textContent = s.nama;
+  document.getElementById('kKamar').textContent = s.kelas || '–';
+  document.getElementById('kId').textContent = 'NIS: ' + s.nis;
+  document.getElementById('kSaldo').textContent = fRp(s.saldo);
+  document.getElementById('kSaldo').className = 'profil-saldo' + (s.saldo < 50000 ? ' rendah' : '');
+  setAvatar(document.getElementById('kAvatar'), s.foto);
+
+  resetItemBelanja();
+  document.getElementById('kKet').value = '';
+  document.getElementById('kasirProfil').style.display = 'block';
+  document.getElementById('iScan').value = '';
+
+  const d = await apiGet({ action: 'getTransaksi', nis: s.nis });
+  renderTrxList((d?.transaksi || []).slice(0, 8), document.getElementById('kRiwayat'), true);
+}
+
+function resetItemBelanja() {
+  document.getElementById('kItems').innerHTML = `
+    <div class="item-row">
+      <input type="text" placeholder="Nama barang" class="item-nama" oninput="hitungTotal()"/>
+      <input type="number" placeholder="Harga" class="item-harga harga" min="100" oninput="hitungTotal()"/>
+      <button class="btn btn-merah btn-sm" onclick="hapusItemRow(this)">✕</button>
+    </div>`;
+  document.getElementById('kTotal').textContent = 'Rp 0';
+}
+function tambahItemRow() {
+  const div = document.createElement('div');
+  div.className = 'item-row';
+  div.innerHTML = `<input type="text" placeholder="Nama barang" class="item-nama" oninput="hitungTotal()"/>
+    <input type="number" placeholder="Harga" class="item-harga harga" min="100" oninput="hitungTotal()"/>
+    <button class="btn btn-merah btn-sm" onclick="hapusItemRow(this)">✕</button>`;
+  document.getElementById('kItems').appendChild(div);
+}
+function hapusItemRow(btn) {
+  const rows = document.querySelectorAll('#kItems .item-row');
+  if (rows.length <= 1) {
+    btn.closest('.item-row').querySelector('.item-nama').value = '';
+    btn.closest('.item-row').querySelector('.item-harga').value = '';
+    hitungTotal(); return;
+  }
+  btn.closest('.item-row').remove();
+  hitungTotal();
+}
+function hitungTotal() {
+  let total = 0;
+  document.querySelectorAll('.item-harga').forEach(h => total += parseInt(h.value) || 0);
+  document.getElementById('kTotal').textContent = fRp(total);
+}
+
+async function prosesBelanja() {
+  const s = cSantri.find(x => x.nis === currentKasirNis);
+  const items = [];
+  document.querySelectorAll('#kItems .item-row').forEach(row => {
+    const nama = row.querySelector('.item-nama').value.trim();
+    const harga = parseInt(row.querySelector('.item-harga').value) || 0;
+    if (nama && harga > 0) items.push({ nama, harga });
+  });
+  if (!items.length) { showToast('Tambahkan minimal 1 item!', true); return; }
+  const total = items.reduce((a, b) => a + b.harga, 0);
+  const keterangan = document.getElementById('kKet').value || 'Belanja';
+
+  setBtnLoading('btnBelanja', true);
+  const d = await apiPost({ action: 'belanja', nis: currentKasirNis, items: JSON.stringify(items), total, keterangan });
+  setBtnLoading('btnBelanja', false);
+  if (!d || d.error) { showToast(d?.error || 'Gagal!', true); return; }
+
+  showToast('✅ Transaksi berhasil! Sisa saldo: ' + fRp(d.saldoBaru));
+  document.getElementById('kSaldo').textContent = fRp(d.saldoBaru);
+  document.getElementById('kSaldo').className = 'profil-saldo' + (d.saldoBaru < 50000 ? ' rendah' : '');
+  if (s) s.saldo = d.saldoBaru;
+  resetItemBelanja();
+
+  const rd = await apiGet({ action: 'getTransaksi', nis: currentKasirNis });
+  renderTrxList((rd?.transaksi || []).slice(0, 8), document.getElementById('kRiwayat'), true);
+  await muatStats();
+}
+
+function batalKasir() {
+  document.getElementById('kasirProfil').style.display = 'none';
+  currentKasirNis = null;
+}
+
+// ==================== RENDER SANTRI ====================
+function setFilterSantri(f, btn) {
+  filterSantri = f;
+  document.querySelectorAll('#page-santri .filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderSantri();
+}
+
+function alamatRingkas(s) {
+  return [s.desa, s.kecamatan, s.kabupaten].filter(Boolean).join(', ');
+}
+
+function renderSantri() {
+  const q = (document.getElementById('srchSantri').value || '').toLowerCase();
+  let list = cSantri.filter(s => {
+    const m = s.nama.toLowerCase().includes(q) || (s.nis || '').toLowerCase().includes(q) || (s.kelas || '').toLowerCase().includes(q);
+    if (!m) return false;
+    if (filterSantri === 'rendah') return s.saldo < 50000 && s.saldo > 0;
+    if (filterSantri === 'habis') return s.saldo <= 0;
+    return true;
+  }).sort((a, b) => a.nama.localeCompare(b.nama));
+
+  const el = document.getElementById('gridSantri');
+  if (!list.length) {
+    el.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="icon">🔍</div><div>Tidak ada santri ditemukan</div></div>';
+    return;
+  }
+  el.innerHTML = list.map(s => {
+    const pct = Math.min(100, (s.saldo / 200000) * 100);
+    const rendah = s.saldo < 50000;
+    const foto = s.foto
+      ? `<img class="santri-foto" src="${s.foto}" alt=""/>`
+      : `<div class="santri-foto-kosong">🧑‍🎓</div>`;
+    const al = alamatRingkas(s);
+    return `<div class="santri-card" onclick="bukaModal('${s.nis}')">
+      <div class="santri-top">${foto}
+        <div><div class="santri-nama">${s.nama}</div><div class="santri-id">NIS: ${s.nis}</div></div>
+      </div>
+      <div class="santri-saldo ${rendah?'rendah':''}">${fRp(s.saldo)}</div>
+      <div class="saldo-bar-wrap"><div class="saldo-bar-fill" style="width:${pct}%;background:${rendah?'#e74c3c':'#2ecc71'}"></div><div class="saldo-bar-bg"></div></div>
+      <div class="santri-kamar">${s.kelas || '–'}</div>
+      ${al ? `<div class="santri-alamat">📍 ${al}</div>` : ''}
+      <div style="margin-top:6px;">${rendah?'<span class="badge badge-merah">⚠️ Saldo Rendah</span>':'<span class="badge badge-hijau">✅ Cukup</span>'}</div>
+    </div>`;
+  }).join('');
+}
+
+function setAvatar(el, fotoUrl) {
+  if (fotoUrl) el.innerHTML = `<img src="${fotoUrl}" alt=""/>`;
+  else el.innerHTML = '🧑‍🎓';
+}
+
+// ==================== MODAL SANTRI ====================
+async function bukaModal(nis) {
+  const s = cSantri.find(x => x.nis === nis);
+  if (!s) return;
+  currentSantriNis = nis;
+
+  document.getElementById('mNama').textContent = s.nama;
+  document.getElementById('mKamar').textContent = s.kelas || '–';
+  document.getElementById('mId').textContent = 'NIS: ' + s.nis;
+  document.getElementById('mHp').textContent = s.hp ? '📱 ' + s.hp : '';
+  document.getElementById('mSaldo').textContent = fRp(s.saldo);
+  document.getElementById('mSaldo').className = 'profil-saldo' + (s.saldo < 50000 ? ' rendah' : '');
+  setAvatar(document.getElementById('mAvatar'), s.foto);
+  const al = [s.jalan, s.desa, s.kecamatan, s.kabupaten, s.provinsi].filter(Boolean).join(', ');
+  document.getElementById('mAlamat').innerHTML = '📍 ' + (al || 'Alamat belum diisi');
+
+  const qrEl = document.getElementById('mQR');
+  qrEl.innerHTML = '';
+  const qrDiv = document.createElement('div');
+  qrEl.appendChild(qrDiv);
+  new QRCode(qrDiv, { text: qrPayload(s.nis), width: 130, height: 130, correctLevel: QRCode.CorrectLevel.H });
+  qrEl.insertAdjacentHTML('beforeend', `<div class="qr-nama">${s.nama}</div><div class="qr-id">NIS: ${s.nis}</div>`);
+
+  const d = await apiGet({ action: 'getTransaksi', nis });
+  renderTrxListDenganHapus(d?.transaksi || [], document.getElementById('mRiwayat'));
+
+  document.getElementById('modalSantri').classList.add('open');
+}
+
+// Isi QR: URL profil bila WEB_APP_URL ada (scan kamera HP -> buka profil),
+// fallback ke NIS polos bila belum dikonfigurasi.
+function qrPayload(nis) {
+  if (WEB_APP_URL) return WEB_APP_URL + '?page=profil&nis=' + encodeURIComponent(nis);
+  return String(nis);
+}
+
+function renderTrxListDenganHapus(list, el) {
+  if (!list.length) {
+    el.innerHTML = '<div class="empty-state" style="padding:16px"><div class="icon" style="font-size:28px">📭</div><div>Belum ada transaksi</div></div>';
+    return;
+  }
+  el.innerHTML = list.map(t => {
+    const isTop = t.tipe === 'topup';
+    const itemsStr = t.items && t.items.length ? t.items.map(i => `${i.nama} (${fRp(i.harga)})`).join(', ') : (t.keterangan || '–');
+    return `<div class="trx-item">
+      <div class="trx-icon ${isTop?'topup':'belanja'}">${isTop?'💰':'🛒'}</div>
+      <div class="trx-info">
+        <div class="trx-nama">${isTop?'Top Up':'Belanja'} — ${t.keterangan||''}</div>
+        <div class="trx-detail">${itemsStr} • ${fTgl(t.tgl)}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div class="trx-jumlah ${isTop?'plus':'minus'}">${isTop?'+':'–'}${fRp(t.jumlah)}</div>
+        <button class="btn btn-merah btn-sm" style="padding:4px 8px;font-size:11px;" onclick="bukaHapusTrx('${t.id}','${t.tipe}',${t.jumlah},'${(t.keterangan||'').replace(/'/g,"\\'")}')">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function hapusSantri() {
+  const s = cSantri.find(x => x.nis === currentSantriNis);
+  if (!s || !confirm('Hapus santri ' + s.nama + '? Data santri akan dihapus dari sheet.')) return;
+  const d = await apiPost({ action: 'hapusSantri', nis: currentSantriNis });
+  if (!d || d.error) { showToast('Gagal hapus!', true); return; }
+  tutupModal('modalSantri');
+  showToast('🗑️ Santri ' + s.nama + ' berhasil dihapus.');
+  await muatSantri();
+  await muatStats();
+}
+
+// ==================== EDIT DATA SANTRI ====================
+function bukaModalEdit() {
+  const s = cSantri.find(x => x.nis === currentSantriNis);
+  if (!s) return;
+  document.getElementById('eNama').value = s.nama || '';
+  document.getElementById('eKelas').value = s.kelas || '';
+  document.getElementById('eFoto').value = s.foto || '';
+  document.getElementById('eJalan').value = s.jalan || '';
+  document.getElementById('eDesa').value = s.desa || '';
+  document.getElementById('eKec').value = s.kecamatan || '';
+  document.getElementById('eKab').value = s.kabupaten || '';
+  document.getElementById('eProv').value = s.provinsi || '';
+  document.getElementById('eHp').value = s.hp || '';
+  document.getElementById('modalEdit').classList.add('open');
+}
+
+async function simpanEdit() {
+  const nama = document.getElementById('eNama').value.trim();
+  if (!nama) { showToast('Nama tidak boleh kosong!', true); return; }
+  const data = {
+    action: 'editSantri', nis: currentSantriNis, nama,
+    kelas: document.getElementById('eKelas').value.trim(),
+    foto:  document.getElementById('eFoto').value.trim(),
+    jalan: document.getElementById('eJalan').value.trim(),
+    desa:  document.getElementById('eDesa').value.trim(),
+    kecamatan: document.getElementById('eKec').value.trim(),
+    kabupaten: document.getElementById('eKab').value.trim(),
+    provinsi:  document.getElementById('eProv').value.trim(),
+    hp:    document.getElementById('eHp').value.trim()
+  };
+
+  setBtnLoading('btnSimpanEdit', true);
+  const d = await apiPost(data);
+  setBtnLoading('btnSimpanEdit', false);
+  if (!d || d.error) { showToast(d?.error || 'Gagal menyimpan!', true); return; }
+
+  const s = cSantri.find(x => x.nis === currentSantriNis);
+  if (s) Object.assign(s, { nama: data.nama, kelas: data.kelas, foto: data.foto, jalan: data.jalan, desa: data.desa, kecamatan: data.kecamatan, kabupaten: data.kabupaten, provinsi: data.provinsi, hp: data.hp });
+
+  showToast('✅ Data santri berhasil diperbarui!');
+  tutupModal('modalEdit');
+  if (s) bukaModal(s.nis);
+  renderSantri();
+  updateSelectSantri();
+}
+
+// ==================== KOREKSI SALDO ====================
+function bukaModalKoreksi() {
+  const s = cSantri.find(x => x.nis === currentSantriNis);
+  if (!s) return;
+  document.getElementById('koreksiSaldoSekarang').textContent = fRp(s.saldo);
+  document.getElementById('koreksiSaldoBaru').value = '';
+  document.getElementById('koreksiAlasan').value = '';
+  document.getElementById('modalKoreksi').classList.add('open');
+}
+
+async function simpanKoreksi() {
+  const saldoBaru = parseInt(document.getElementById('koreksiSaldoBaru').value);
+  const alasan = document.getElementById('koreksiAlasan').value.trim() || 'Koreksi saldo manual';
+  if (isNaN(saldoBaru) || saldoBaru < 0) { showToast('Masukkan nominal saldo yang valid!', true); return; }
+
+  setBtnLoading('btnSimpanKoreksi', true);
+  const d = await apiPost({ action: 'koreksiSaldo', nis: currentSantriNis, saldoBaru, alasan });
+  setBtnLoading('btnSimpanKoreksi', false);
+  if (!d || d.error) { showToast(d?.error || 'Gagal!', true); return; }
+
+  const s = cSantri.find(x => x.nis === currentSantriNis);
+  if (s) s.saldo = saldoBaru;
+
+  showToast('✅ Saldo berhasil dikoreksi menjadi ' + fRp(saldoBaru));
+  tutupModal('modalKoreksi');
+  document.getElementById('mSaldo').textContent = fRp(saldoBaru);
+  document.getElementById('mSaldo').className = 'profil-saldo' + (saldoBaru < 50000 ? ' rendah' : '');
+  renderSantri();
+  updateSelectSantri();
+  await muatStats();
+}
+
+// ==================== HAPUS TRANSAKSI ====================
+let currentTrxHapus = null;
+function bukaHapusTrx(trxId, tipe, jumlah, keterangan) {
+  currentTrxHapus = { trxId, tipe, jumlah };
+  const isTop = tipe === 'topup';
+  document.getElementById('detailTrxHapus').innerHTML = `
+    <div style="font-size:12px;color:var(--teks2);margin-bottom:6px;">DETAIL TRANSAKSI</div>
+    <div style="font-size:15px;font-weight:700;color:${isTop?'#2ecc71':'#ff6b6b'};">${isTop?'💰 Top Up':'🛒 Belanja'} — ${fRp(jumlah)}</div>
+    <div style="font-size:11px;color:var(--teks2);margin-top:4px;">${keterangan}</div>
+    ${!isTop ? `<div style="font-size:11px;color:var(--hijau-terang);margin-top:6px;">✅ Saldo santri akan dikembalikan ${fRp(jumlah)}</div>` : ''}
+    ${isTop ? `<div style="font-size:11px;color:var(--merah-muda);margin-top:6px;">⚠️ Saldo santri akan dikurangi ${fRp(jumlah)}</div>` : ''}
+  `;
+  document.getElementById('modalHapusTrx').classList.add('open');
+}
+
+async function konfirmasiHapusTrx() {
+  if (!currentTrxHapus) return;
+  setBtnLoading('btnKonfirmasiHapusTrx', true);
+  const d = await apiPost({ action: 'hapusTransaksi', nis: currentSantriNis, trxId: currentTrxHapus.trxId, tipe: currentTrxHapus.tipe, jumlah: currentTrxHapus.jumlah });
+  setBtnLoading('btnKonfirmasiHapusTrx', false);
+  if (!d || d.error) { showToast(d?.error || 'Gagal hapus transaksi!', true); return; }
+
+  showToast('🗑️ Transaksi dihapus. Saldo diperbarui.');
+  tutupModal('modalHapusTrx');
+  currentTrxHapus = null;
+
+  const s = cSantri.find(x => x.nis === currentSantriNis);
+  if (s && d.saldoBaru !== undefined) {
+    s.saldo = d.saldoBaru;
+    document.getElementById('mSaldo').textContent = fRp(d.saldoBaru);
+    document.getElementById('mSaldo').className = 'profil-saldo' + (d.saldoBaru < 50000 ? ' rendah' : '');
+  }
+  const rd = await apiGet({ action: 'getTransaksi', nis: currentSantriNis });
+  renderTrxListDenganHapus(rd?.transaksi || [], document.getElementById('mRiwayat'));
+  renderSantri();
+  updateSelectSantri();
+  await muatStats();
+}
+
+// ==================== LAPORAN ====================
+function setFilterLap(f, btn) {
+  filterLap = f;
+  document.querySelectorAll('#page-laporan .filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderLaporan();
+}
+function renderLaporan() {
+  let list = cTrx;
+  if (filterLap === 'belanja') list = cTrx.filter(t => t.tipe === 'belanja');
+  if (filterLap === 'topup') list = cTrx.filter(t => t.tipe === 'topup');
+  renderTrxList(list, document.getElementById('listLaporan'), false, true);
+}
+
+// ==================== CETAK QR ====================
+function renderCetak() {
+  const grid = document.getElementById('gridCetak');
+  grid.innerHTML = '';
+  if (!cSantri.length) {
+    grid.innerHTML = '<div class="empty-state"><div class="icon">📭</div><div>Belum ada santri</div></div>';
+    return;
+  }
+  [...cSantri].sort((a, b) => a.nama.localeCompare(b.nama)).forEach(s => {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'background:white;border-radius:10px;padding:14px;text-align:center;display:inline-flex;flex-direction:column;align-items:center;gap:6px;border:2px solid #1a7a4a;width:180px;';
+    const qrDiv = document.createElement('div');
+    wrap.appendChild(qrDiv);
+    new QRCode(qrDiv, { text: qrPayload(s.nis), width: 120, height: 120, correctLevel: QRCode.CorrectLevel.H });
+    wrap.insertAdjacentHTML('beforeend', `
+      <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;color:#0d1f14;font-size:11px;max-width:150px;">${s.nama}</div>
+      <div style="font-family:monospace;color:#666;font-size:9px;">NIS: ${s.nis}</div>
+      <div style="font-size:9px;color:#1a7a4a;font-weight:600;">${s.kelas||''}</div>
+      <div style="font-size:8px;color:#888;border-top:1px dashed #ccc;padding-top:4px;width:100%;">🕌 Pesantren Abu Hurairah Ra. (ARA)</div>`);
+    grid.appendChild(wrap);
+  });
+}
+
+// ==================== HELPER RENDER TRX ====================
+function renderTrxList(list, el, short = false, showNama = false) {
+  if (!list.length) {
+    el.innerHTML = '<div class="empty-state" style="padding:16px"><div class="icon" style="font-size:28px">📭</div><div>Belum ada transaksi</div></div>';
+    return;
+  }
+  const items = short ? list.slice(0, 8) : list;
+  el.innerHTML = items.map(t => {
+    const isTop = t.tipe === 'topup';
+    const itemsStr = t.items && t.items.length ? t.items.map(i => `${i.nama} (${fRp(i.harga)})`).join(', ') : (t.keterangan || '–');
+    const namaStr = showNama ? `<b>${t.namaSantri || '?'}</b> — ` : '';
+    return `<div class="trx-item">
+      <div class="trx-icon ${isTop?'topup':'belanja'}">${isTop?'💰':'🛒'}</div>
+      <div class="trx-info">
+        <div class="trx-nama">${namaStr}${isTop?'Top Up':'Belanja'} — ${t.keterangan||''}</div>
+        <div class="trx-detail">${itemsStr} • ${fTgl(t.tgl)}</div>
+      </div>
+      <div class="trx-jumlah ${isTop?'plus':'minus'}">${isTop?'+':'–'}${fRp(t.jumlah)}</div>
+    </div>`;
+  }).join('');
+}
+
+// ==================== PENGATURAN ====================
+function simpanUrl() {
+  const url = (document.getElementById('iUrl').value || document.getElementById('inputWebAppUrl').value).trim();
+  if (!url) { showToast('Masukkan URL!', true); return; }
+  WEB_APP_URL = url;
+  localStorage.setItem('ara_webappurl', url);
+  document.getElementById('iUrl').value = url;
+  document.getElementById('inputWebAppUrl').value = url;
+  document.getElementById('setupBanner').classList.remove('show');
+  showToast('✅ URL tersimpan! Menghubungkan...');
+  mulaiMuat();
+}
+
+async function tesKoneksi() {
+  const url = (document.getElementById('iUrl').value || document.getElementById('inputWebAppUrl').value).trim();
+  if (url) { WEB_APP_URL = url; localStorage.setItem('ara_webappurl', url); }
+  if (!WEB_APP_URL) { showToast('Masukkan URL dulu!', true); return; }
+  showToast('🔌 Mengetes koneksi...');
+  const d = await apiGet({ action: 'getStats' });
+  if (d && !d.error) {
+    showToast('✅ Koneksi berhasil! Terhubung ke Google Sheets.');
+    setConn(true, 'Online');
+    document.getElementById('statusKoneksi').textContent = '✅ Terhubung ke Google Sheets';
+  } else {
+    showToast('❌ ' + (d?.error || 'Koneksi gagal! Periksa URL & deployment.'), true);
+  }
+}
+
+async function setupSheets() {
+  showToast('🔧 Menyiapkan Google Sheets...');
+  const d = await apiGet({ action: 'setup' });
+  if (d?.ok) showToast('✅ Google Sheets siap dipakai!');
+  else showToast('❌ ' + (d?.error || 'Gagal setup.'), true);
+}
+
+// ==================== UTILS ====================
+function fRp(n) { return 'Rp ' + Number(n).toLocaleString('id-ID'); }
+function fTgl(iso) {
+  if (!iso) return '–';
+  const d = new Date(iso);
+  return d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}) + ' ' +
+         d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
+}
+function updateSelectSantri() {
+  const sel = document.getElementById('selTopup');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">-- Pilih Santri --</option>';
+  [...cSantri].sort((a, b) => a.nama.localeCompare(b.nama)).forEach(s => {
+    sel.innerHTML += `<option value="${s.nis}">${s.nama} — ${fRp(s.saldo)}</option>`;
+  });
+  sel.value = cur;
+}
+function showPage(p) {
+  document.querySelectorAll('.page').forEach(x => x.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(x => x.classList.remove('active'));
+  document.getElementById('page-' + p).classList.add('active');
+  document.getElementById('tab-' + p).classList.add('active');
+  if (p === 'santri') renderSantri();
+  if (p === 'laporan') muatLaporan();
+  if (p === 'cetak') renderCetak();
+  if (p === 'admin') muatStats();
+}
+function setConn(online, txt) {
+  document.getElementById('connDot').className = 'conn-dot ' + (online ? 'online' : 'offline');
+  document.getElementById('connText').textContent = txt;
+  document.getElementById('statusKoneksi').textContent = online ? '✅ Terhubung ke Google Sheets' : '❌ Tidak terhubung';
+}
+function showToast(msg, err = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (err ? ' error' : '');
+  setTimeout(() => t.classList.remove('show'), 3200);
+}
+function tutupModal(id) { document.getElementById(id).classList.remove('open'); }
+function setBtnLoading(id, loading) {
+  const btn = document.getElementById(id);
+  if (!btn) return;
+  if (loading) { btn._orig = btn.innerHTML; btn.innerHTML = '<span class="loading"></span>Memproses...'; btn.disabled = true; }
+  else { btn.innerHTML = btn._orig || btn.innerHTML; btn.disabled = false; }
+}
+</script>
+</body>
+</html>
