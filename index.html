@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>ARA — Sistem Keuangan Santri</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <style>
 :root {
@@ -100,6 +101,9 @@ input::placeholder{color:#4a7a5a;}
 
 .scan-area{background:var(--kartu2);border-radius:14px;padding:20px;text-align:center;border:2px dashed #2a4535;}
 .scan-icon{font-size:44px;margin-bottom:10px;}
+#reader{max-width:320px;margin:12px auto 0;border-radius:12px;overflow:hidden;display:none;border:2px solid var(--hijau-muda);}
+#reader.show{display:block;}
+#reader video{width:100%!important;display:block;}
 .item-row{display:flex;gap:7px;margin-bottom:7px;align-items:center;}
 .item-row input{flex:1;}
 .item-row input.harga{max-width:120px;}
@@ -205,7 +209,14 @@ input::placeholder{color:#4a7a5a;}
       <div class="form-group"><label>NAMA LENGKAP *</label><input type="text" id="iNama" placeholder="Ahmad Fauzi"/></div>
     </div>
     <div class="form-row">
+      <div class="form-group"><label>NIK SANTRI (NO. KTP/KK)</label><input type="text" id="iNik" placeholder="16 digit (opsional)"/></div>
       <div class="form-group"><label>KELAS / KAMAR</label><input type="text" id="iKelas" placeholder="Kelas 3A / Al-Fatih"/></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>NAMA AYAH</label><input type="text" id="iAyah" placeholder="Nama ayah"/></div>
+      <div class="form-group"><label>NAMA IBU</label><input type="text" id="iIbu" placeholder="Nama ibu"/></div>
+    </div>
+    <div class="form-row">
       <div class="form-group"><label>FOTO (URL/LINK GAMBAR)</label><input type="text" id="iFoto" placeholder="https://... (opsional)"/></div>
     </div>
     <p class="hint">💡 Foto paling mudah diisi lewat <b>AppSheet</b> (ambil langsung dari kamera HP). Di sini boleh dikosongkan atau tempel link gambar.</p>
@@ -246,11 +257,15 @@ input::placeholder{color:#4a7a5a;}
     <div class="card-title">🔍 Cari / Scan Santri</div>
     <div class="scan-area">
       <div class="scan-icon">📷</div>
-      <p style="font-size:12px;color:var(--teks2);margin-bottom:12px;">Scan QR, masukkan NIS, atau ketik nama santri</p>
+      <p style="font-size:12px;color:var(--teks2);margin-bottom:12px;">Scan QR pakai kamera, masukkan NIS, atau ketik nama santri</p>
       <div style="display:flex;gap:7px;max-width:380px;margin:0 auto;">
         <input type="text" id="iScan" placeholder="NIS / hasil scan / nama..." style="flex:1;" onkeydown="if(event.key==='Enter')cariKasir()"/>
         <button class="btn btn-hijau" onclick="cariKasir()">🔍</button>
       </div>
+      <div style="margin-top:10px;">
+        <button class="btn btn-emas btn-sm" id="btnScan" onclick="toggleScanner()">📷 Scan QR (Kamera)</button>
+      </div>
+      <div id="reader"></div>
     </div>
   </div>
 
@@ -399,6 +414,7 @@ input::placeholder{color:#4a7a5a;}
       </div>
     </div>
     <div style="font-size:11px;color:var(--teks2);background:var(--gelap2);border-radius:10px;padding:10px 12px;margin-bottom:14px;line-height:1.6;" id="mAlamat">📍 –</div>
+    <div style="font-size:11px;color:var(--teks2);background:var(--gelap2);border-radius:10px;padding:10px 12px;margin-bottom:14px;line-height:1.6;" id="mOrtu"></div>
     <div style="text-align:center;margin-bottom:14px;">
       <div class="qr-wrapper" style="margin:0 auto;" id="mQR"></div>
     </div>
@@ -425,6 +441,13 @@ input::placeholder{color:#4a7a5a;}
     <div class="form-row">
       <div class="form-group"><label>NAMA LENGKAP</label><input type="text" id="eNama"/></div>
       <div class="form-group"><label>KELAS / KAMAR</label><input type="text" id="eKelas"/></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>NIK SANTRI</label><input type="text" id="eNik"/></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>NAMA AYAH</label><input type="text" id="eAyah"/></div>
+      <div class="form-group"><label>NAMA IBU</label><input type="text" id="eIbu"/></div>
     </div>
     <div class="form-group" style="margin-bottom:10px;"><label>FOTO (URL)</label><input type="text" id="eFoto"/></div>
     <div class="form-row">
@@ -593,6 +616,9 @@ async function tambahSantri() {
 
   const data = {
     action: 'tambahSantri', nis, nama,
+    nik:   document.getElementById('iNik').value.trim(),
+    ayah:  document.getElementById('iAyah').value.trim(),
+    ibu:   document.getElementById('iIbu').value.trim(),
     kelas: document.getElementById('iKelas').value.trim(),
     foto:  document.getElementById('iFoto').value.trim(),
     jalan: document.getElementById('iJalan').value.trim(),
@@ -610,7 +636,7 @@ async function tambahSantri() {
   if (!d || d.error) { showToast(d?.error || 'Gagal!', true); return; }
 
   showToast('✅ ' + nama + ' (NIS ' + nis + ') berhasil ditambahkan!');
-  ['iNis','iNama','iKelas','iFoto','iJalan','iDesa','iKec','iKab','iProv','iHp','iSaldo']
+  ['iNis','iNama','iNik','iAyah','iIbu','iKelas','iFoto','iJalan','iDesa','iKec','iKab','iProv','iHp','iSaldo']
     .forEach(id => document.getElementById(id).value = '');
   await muatSantri();
   await muatStats();
@@ -643,6 +669,53 @@ function ekstrakNis(input) {
   const m = t.match(/[?&]nis=([^&\s]+)/i);
   if (m) return decodeURIComponent(m[1]);
   return t;
+}
+
+// ---------- SCANNER KAMERA ----------
+let _scanner = null;
+let _scanAktif = false;
+
+async function toggleScanner() {
+  if (_scanAktif) { await stopScanner(); return; }
+  if (typeof Html5Qrcode === 'undefined') { showToast('Library scanner gagal dimuat. Cek internet.', true); return; }
+
+  const reader = document.getElementById('reader');
+  reader.classList.add('show');
+  document.getElementById('btnScan').innerHTML = '⏹️ Tutup Kamera';
+
+  try {
+    _scanner = new Html5Qrcode('reader');
+    await _scanner.start(
+      { facingMode: 'environment' },           // kamera belakang
+      { fps: 10, qrbox: { width: 220, height: 220 } },
+      onScanSukses,
+      () => {}                                  // abaikan frame yang gagal
+    );
+    _scanAktif = true;
+  } catch (err) {
+    showToast('❌ Tidak bisa membuka kamera. Pastikan halaman diakses via HTTPS & izin kamera diberikan.', true);
+    reader.classList.remove('show');
+    document.getElementById('btnScan').innerHTML = '📷 Scan QR (Kamera)';
+    _scanner = null;
+  }
+}
+
+async function stopScanner() {
+  if (_scanner && _scanAktif) {
+    try { await _scanner.stop(); _scanner.clear(); } catch (e) {}
+  }
+  _scanAktif = false;
+  _scanner = null;
+  document.getElementById('reader').classList.remove('show');
+  const b = document.getElementById('btnScan');
+  if (b) b.innerHTML = '📷 Scan QR (Kamera)';
+}
+
+function onScanSukses(decodedText) {
+  document.getElementById('iScan').value = decodedText;
+  stopScanner();                 // matikan kamera setelah berhasil
+  showToast('✅ QR terbaca!');
+  cariKasir();                   // langsung cari & buka layar belanja
 }
 
 async function cariKasir() {
@@ -769,8 +842,9 @@ function renderSantri() {
     return;
   }
   el.innerHTML = list.map(s => {
-    const pct = Math.min(100, (s.saldo / 200000) * 100);
+    const pct = Math.max(0, Math.min(100, (s.saldo / 200000) * 100));
     const rendah = s.saldo < 50000;
+    const minus = s.saldo < 0;
     const foto = s.foto
       ? `<img class="santri-foto" src="${s.foto}" alt=""/>`
       : `<div class="santri-foto-kosong">🧑‍🎓</div>`;
@@ -783,7 +857,7 @@ function renderSantri() {
       <div class="saldo-bar-wrap"><div class="saldo-bar-fill" style="width:${pct}%;background:${rendah?'#e74c3c':'#2ecc71'}"></div><div class="saldo-bar-bg"></div></div>
       <div class="santri-kamar">${s.kelas || '–'}</div>
       ${al ? `<div class="santri-alamat">📍 ${al}</div>` : ''}
-      <div style="margin-top:6px;">${rendah?'<span class="badge badge-merah">⚠️ Saldo Rendah</span>':'<span class="badge badge-hijau">✅ Cukup</span>'}</div>
+      <div style="margin-top:6px;">${minus?'<span class="badge badge-merah">🔴 Minus</span>':rendah?'<span class="badge badge-merah">⚠️ Saldo Rendah</span>':'<span class="badge badge-hijau">✅ Cukup</span>'}</div>
     </div>`;
   }).join('');
 }
@@ -808,6 +882,13 @@ async function bukaModal(nis) {
   setAvatar(document.getElementById('mAvatar'), s.foto);
   const al = [s.jalan, s.desa, s.kecamatan, s.kabupaten, s.provinsi].filter(Boolean).join(', ');
   document.getElementById('mAlamat').innerHTML = '📍 ' + (al || 'Alamat belum diisi');
+  const baris = [];
+  if (s.nik) baris.push('🪪 NIK: ' + s.nik);
+  if (s.ayah) baris.push('👨 Ayah: ' + s.ayah);
+  if (s.ibu) baris.push('👩 Ibu: ' + s.ibu);
+  const mOrtu = document.getElementById('mOrtu');
+  if (baris.length) { mOrtu.style.display = 'block'; mOrtu.innerHTML = baris.join('<br/>'); }
+  else { mOrtu.style.display = 'none'; }
 
   const qrEl = document.getElementById('mQR');
   qrEl.innerHTML = '';
@@ -868,6 +949,9 @@ function bukaModalEdit() {
   if (!s) return;
   document.getElementById('eNama').value = s.nama || '';
   document.getElementById('eKelas').value = s.kelas || '';
+  document.getElementById('eNik').value = s.nik || '';
+  document.getElementById('eAyah').value = s.ayah || '';
+  document.getElementById('eIbu').value = s.ibu || '';
   document.getElementById('eFoto').value = s.foto || '';
   document.getElementById('eJalan').value = s.jalan || '';
   document.getElementById('eDesa').value = s.desa || '';
@@ -883,6 +967,9 @@ async function simpanEdit() {
   if (!nama) { showToast('Nama tidak boleh kosong!', true); return; }
   const data = {
     action: 'editSantri', nis: currentSantriNis, nama,
+    nik:   document.getElementById('eNik').value.trim(),
+    ayah:  document.getElementById('eAyah').value.trim(),
+    ibu:   document.getElementById('eIbu').value.trim(),
     kelas: document.getElementById('eKelas').value.trim(),
     foto:  document.getElementById('eFoto').value.trim(),
     jalan: document.getElementById('eJalan').value.trim(),
@@ -899,7 +986,7 @@ async function simpanEdit() {
   if (!d || d.error) { showToast(d?.error || 'Gagal menyimpan!', true); return; }
 
   const s = cSantri.find(x => x.nis === currentSantriNis);
-  if (s) Object.assign(s, { nama: data.nama, kelas: data.kelas, foto: data.foto, jalan: data.jalan, desa: data.desa, kecamatan: data.kecamatan, kabupaten: data.kabupaten, provinsi: data.provinsi, hp: data.hp });
+  if (s) Object.assign(s, { nama: data.nama, nik: data.nik, ayah: data.ayah, ibu: data.ibu, kelas: data.kelas, foto: data.foto, jalan: data.jalan, desa: data.desa, kecamatan: data.kecamatan, kabupaten: data.kabupaten, provinsi: data.provinsi, hp: data.hp });
 
   showToast('✅ Data santri berhasil diperbarui!');
   tutupModal('modalEdit');
@@ -1074,7 +1161,10 @@ async function setupSheets() {
 }
 
 // ==================== UTILS ====================
-function fRp(n) { return 'Rp ' + Number(n).toLocaleString('id-ID'); }
+function fRp(n) {
+  n = Number(n) || 0;
+  return (n < 0 ? '-Rp ' : 'Rp ') + Math.abs(n).toLocaleString('id-ID');
+}
 function fTgl(iso) {
   if (!iso) return '–';
   const d = new Date(iso);
@@ -1091,6 +1181,7 @@ function updateSelectSantri() {
   sel.value = cur;
 }
 function showPage(p) {
+  if (p !== 'kasir' && _scanAktif) stopScanner();
   document.querySelectorAll('.page').forEach(x => x.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(x => x.classList.remove('active'));
   document.getElementById('page-' + p).classList.add('active');
