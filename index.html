@@ -6,6 +6,7 @@
 <title>ARA — Sistem Keuangan Santri</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <style>
 :root {
@@ -149,9 +150,10 @@ input::placeholder{color:#4a7a5a;}
 .saldo-bar-bg{border-radius:2px;background:#2a4535;flex:1;}
 .divider{border:none;border-top:1px solid #2a4535;margin:14px 0;}
 .hint{font-size:10px;color:var(--teks2);margin-top:-4px;margin-bottom:10px;line-height:1.5;}
+body.locked .admin-only{display:none!important;}
 </style>
 </head>
-<body>
+<body class="locked">
 
 <div class="toast" id="toast"></div>
 
@@ -185,16 +187,17 @@ input::placeholder{color:#4a7a5a;}
 
 <!-- TABS -->
 <div class="nav-tabs">
-  <button class="tab-btn active" onclick="showPage('admin')" id="tab-admin">👑 Admin</button>
-  <button class="tab-btn" onclick="showPage('kasir')" id="tab-kasir">🔍 Kasir</button>
+  <button class="tab-btn active" onclick="showPage('kasir')" id="tab-kasir">🔍 Kasir</button>
   <button class="tab-btn" onclick="showPage('santri')" id="tab-santri">📋 Santri</button>
   <button class="tab-btn" onclick="showPage('laporan')" id="tab-laporan">📊 Laporan</button>
-  <button class="tab-btn" onclick="showPage('cetak')" id="tab-cetak">🖨️ Cetak QR</button>
+  <button class="tab-btn admin-only" onclick="showPage('admin')" id="tab-admin">👑 Admin</button>
+  <button class="tab-btn admin-only" onclick="showPage('cetak')" id="tab-cetak">🖨️ Cetak QR</button>
   <button class="tab-btn" onclick="showPage('pengaturan')" id="tab-pengaturan">⚙️ Pengaturan</button>
+  <button class="tab-btn" onclick="toggleAdmin()" id="tab-lock" style="margin-left:auto;background:#3d2a0d;color:var(--emas-muda);">🔒 Mode Admin</button>
 </div>
 
 <!-- ======== ADMIN ======== -->
-<div class="page active" id="page-admin">
+<div class="page" id="page-admin">
   <div class="stats-row">
     <div class="stat-card"><div class="stat-val" id="stSantri">–</div><div class="stat-label">Total Santri</div></div>
     <div class="stat-card"><div class="stat-val" id="stSaldo">–</div><div class="stat-label">Total Saldo</div></div>
@@ -209,8 +212,13 @@ input::placeholder{color:#4a7a5a;}
       <div class="form-group"><label>NAMA LENGKAP *</label><input type="text" id="iNama" placeholder="Ahmad Fauzi"/></div>
     </div>
     <div class="form-row">
-      <div class="form-group"><label>NIK SANTRI (NO. KTP/KK)</label><input type="text" id="iNik" placeholder="16 digit (opsional)"/></div>
+      <div class="form-group"><label>JENIS</label>
+        <select id="iJenis"><option value="Putra">Putra</option><option value="Putri">Putri</option></select>
+      </div>
       <div class="form-group"><label>KELAS / KAMAR</label><input type="text" id="iKelas" placeholder="Kelas 3A / Al-Fatih"/></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>NIK SANTRI (NO. KTP/KK)</label><input type="text" id="iNik" placeholder="16 digit (opsional)"/></div>
     </div>
     <div class="form-row">
       <div class="form-group"><label>NAMA AYAH</label><input type="text" id="iAyah" placeholder="Nama ayah"/></div>
@@ -272,7 +280,7 @@ input::placeholder{color:#4a7a5a;}
 </div>
 
 <!-- ======== KASIR ======== -->
-<div class="page" id="page-kasir">
+<div class="page active" id="page-kasir">
   <div class="card">
     <div class="card-title">🔍 Cari / Scan Santri</div>
     <div class="scan-area">
@@ -339,6 +347,8 @@ input::placeholder{color:#4a7a5a;}
     </div>
     <div class="filter-row">
       <button class="filter-btn active" onclick="setFilterSantri('semua',this)">Semua</button>
+      <button class="filter-btn" onclick="setFilterSantri('putra',this)">👦 Putra</button>
+      <button class="filter-btn" onclick="setFilterSantri('putri',this)">👧 Putri</button>
       <button class="filter-btn" onclick="setFilterSantri('rendah',this)">⚠️ Saldo Rendah</button>
       <button class="filter-btn" onclick="setFilterSantri('habis',this)">🔴 Habis</button>
     </div>
@@ -370,7 +380,7 @@ input::placeholder{color:#4a7a5a;}
   <div class="card no-print">
     <div class="card-title">🖨️ Cetak Kartu QR Santri</div>
     <p style="font-size:12px;color:var(--teks2);line-height:1.6;margin-bottom:12px;">
-      Setiap QR berisi NIS santri. Bila di-scan kamera HP akan membuka halaman profil (foto, alamat, saldo, riwayat). Bila di-scan di Kasir, langsung untuk pembayaran.
+      Setiap QR membuka halaman profil anak saat di-scan orang tua, dan dipakai untuk bayar di Kasir. Tiap kartu punya tombol <b>⬇️ Download</b> (simpan sebagai gambar) dan <b>📲 Bagikan</b> (kirim langsung ke WhatsApp orang tua, lengkap dengan link profilnya).
     </p>
     <div style="display:flex;gap:7px;flex-wrap:wrap;">
       <button class="btn btn-emas" onclick="window.print()">🖨️ Cetak Semua</button>
@@ -442,7 +452,7 @@ input::placeholder{color:#4a7a5a;}
     <div class="card-title">📜 Riwayat <span style="font-size:10px;color:var(--teks2);font-weight:400;text-transform:none;">(klik 🗑️ untuk hapus transaksi)</span></div>
     <div id="mRiwayat" class="trx-list" style="max-height:200px;overflow-y:auto;"></div>
     <hr class="divider"/>
-    <div style="display:flex;gap:7px;flex-wrap:wrap;">
+    <div class="admin-only" style="display:flex;gap:7px;flex-wrap:wrap;">
       <button class="btn btn-hijau btn-sm" onclick="bukaModalEdit()">✏️ Edit Data</button>
       <button class="btn btn-outline btn-sm" onclick="bukaModalKoreksi()">💰 Koreksi Saldo</button>
       <button class="btn btn-merah btn-sm" onclick="hapusSantri()">🗑️ Hapus Santri</button>
@@ -461,6 +471,11 @@ input::placeholder{color:#4a7a5a;}
     <div class="form-row">
       <div class="form-group"><label>NAMA LENGKAP</label><input type="text" id="eNama"/></div>
       <div class="form-group"><label>KELAS / KAMAR</label><input type="text" id="eKelas"/></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>JENIS</label>
+        <select id="eJenis"><option value="Putra">Putra</option><option value="Putri">Putri</option></select>
+      </div>
     </div>
     <div class="form-row">
       <div class="form-group"><label>NIK SANTRI</label><input type="text" id="eNik"/></div>
@@ -546,6 +561,8 @@ let filterSantri = 'semua';
 let filterLap = 'semua';
 let currentSantriNis = null;
 let currentKasirNis = null;
+let MODE_ADMIN = false;
+let ADMIN_PIN = '';
 
 // ==================== INIT ====================
 window.onload = () => {
@@ -560,6 +577,41 @@ window.onload = () => {
 };
 
 function mulaiMuat() { muatStats(); muatSantri(); }
+
+// ==================== MODE ADMIN / KASIR ====================
+async function toggleAdmin() {
+  if (MODE_ADMIN) { kunciAdmin(); return; }
+  const pin = prompt('Masukkan PIN Admin:');
+  if (pin === null || pin === '') return;
+  const d = await apiGet({ action: 'cekPin', pin });
+  if (d && d.ok) {
+    MODE_ADMIN = true;
+    ADMIN_PIN = pin;
+    document.body.classList.remove('locked');
+    const b = document.getElementById('tab-lock');
+    b.textContent = '🔓 Keluar Admin';
+    b.style.background = 'var(--hijau)';
+    b.style.color = 'white';
+    showToast('✅ Mode Admin aktif.');
+  } else {
+    showToast('❌ PIN salah!', true);
+  }
+}
+function kunciAdmin() {
+  MODE_ADMIN = false;
+  ADMIN_PIN = '';
+  document.body.classList.add('locked');
+  const b = document.getElementById('tab-lock');
+  b.textContent = '🔒 Mode Admin';
+  b.style.background = '#3d2a0d';
+  b.style.color = 'var(--emas-muda)';
+  const adminAktif = document.getElementById('page-admin').classList.contains('active') ||
+                     document.getElementById('page-cetak').classList.contains('active');
+  if (adminAktif) showPage('kasir');
+  // tutup modal & refresh daftar agar tombol hapus transaksi ikut hilang
+  if (currentSantriNis && document.getElementById('modalSantri').classList.contains('open')) bukaModal(currentSantriNis);
+  showToast('🔒 Kembali ke Mode Kasir.');
+}
 
 // ==================== API (JSONP) ====================
 function apiGet(params) {
@@ -640,7 +692,8 @@ async function tambahSantri() {
   if (!nama) { showToast('Nama wajib diisi!', true); return; }
 
   const data = {
-    action: 'tambahSantri', nis, nama,
+    action: 'tambahSantri', pin: ADMIN_PIN, nis, nama,
+    jenis: document.getElementById('iJenis').value,
     nik:   document.getElementById('iNik').value.trim(),
     ayah:  document.getElementById('iAyah').value.trim(),
     ibu:   document.getElementById('iIbu').value.trim(),
@@ -676,7 +729,7 @@ async function topupSaldo() {
   if (!jumlah || jumlah < 1000) { showToast('Minimal Rp 1.000!', true); return; }
 
   setBtnLoading('btnTopup', true);
-  const d = await apiPost({ action: 'topupSaldo', nis, jumlah, keterangan });
+  const d = await apiPost({ action: 'topupSaldo', pin: ADMIN_PIN, nis, jumlah, keterangan });
   setBtnLoading('btnTopup', false);
   if (!d || d.error) { showToast(d?.error || 'Gagal!', true); return; }
 
@@ -697,7 +750,7 @@ async function tambahCatatan() {
   if (!judul && !isi) { showToast('Isi judul atau keterangan!', true); return; }
 
   setBtnLoading('btnCatatan', true);
-  const d = await apiPost({ action: 'tambahCatatan', nis, kategori, judul, isi });
+  const d = await apiPost({ action: 'tambahCatatan', pin: ADMIN_PIN, nis, kategori, judul, isi });
   setBtnLoading('btnCatatan', false);
   if (!d || d.error) { showToast(d?.error || 'Gagal!', true); return; }
 
@@ -877,6 +930,8 @@ function renderSantri() {
     if (!m) return false;
     if (filterSantri === 'rendah') return s.saldo < 50000 && s.saldo > 0;
     if (filterSantri === 'habis') return s.saldo <= 0;
+    if (filterSantri === 'putra') return s.jenis === 'Putra';
+    if (filterSantri === 'putri') return s.jenis === 'Putri';
     return true;
   }).sort((a, b) => a.nama.localeCompare(b.nama));
 
@@ -899,7 +954,7 @@ function renderSantri() {
       </div>
       <div class="santri-saldo ${rendah?'rendah':''}">${fRp(s.saldo)}</div>
       <div class="saldo-bar-wrap"><div class="saldo-bar-fill" style="width:${pct}%;background:${rendah?'#e74c3c':'#2ecc71'}"></div><div class="saldo-bar-bg"></div></div>
-      <div class="santri-kamar">${s.kelas || '–'}</div>
+      <div class="santri-kamar">${s.kelas || '–'}${s.jenis ? ' · ' + s.jenis : ''}</div>
       ${al ? `<div class="santri-alamat">📍 ${al}</div>` : ''}
       <div style="margin-top:6px;">${minus?'<span class="badge badge-merah">🔴 Minus</span>':rendah?'<span class="badge badge-merah">⚠️ Saldo Rendah</span>':'<span class="badge badge-hijau">✅ Cukup</span>'}</div>
     </div>`;
@@ -966,6 +1021,9 @@ function renderTrxListDenganHapus(list, el) {
   el.innerHTML = list.map(t => {
     const isTop = t.tipe === 'topup';
     const itemsStr = t.items && t.items.length ? t.items.map(i => `${i.nama} (${fRp(i.harga)})`).join(', ') : (t.keterangan || '–');
+    const delBtn = MODE_ADMIN
+      ? `<button class="btn btn-merah btn-sm" style="padding:4px 8px;font-size:11px;" onclick="bukaHapusTrx('${t.id}','${t.tipe}',${t.jumlah},'${(t.keterangan||'').replace(/'/g,"\\'")}')">🗑️</button>`
+      : '';
     return `<div class="trx-item">
       <div class="trx-icon ${isTop?'topup':'belanja'}">${isTop?'💰':'🛒'}</div>
       <div class="trx-info">
@@ -974,7 +1032,7 @@ function renderTrxListDenganHapus(list, el) {
       </div>
       <div style="display:flex;align-items:center;gap:8px;">
         <div class="trx-jumlah ${isTop?'plus':'minus'}">${isTop?'+':'–'}${fRp(t.jumlah)}</div>
-        <button class="btn btn-merah btn-sm" style="padding:4px 8px;font-size:11px;" onclick="bukaHapusTrx('${t.id}','${t.tipe}',${t.jumlah},'${(t.keterangan||'').replace(/'/g,"\\'")}')">🗑️</button>
+        ${delBtn}
       </div>
     </div>`;
   }).join('');
@@ -983,7 +1041,7 @@ function renderTrxListDenganHapus(list, el) {
 async function hapusSantri() {
   const s = cSantri.find(x => x.nis === currentSantriNis);
   if (!s || !confirm('Hapus santri ' + s.nama + '? Data santri akan dihapus dari sheet.')) return;
-  const d = await apiPost({ action: 'hapusSantri', nis: currentSantriNis });
+  const d = await apiPost({ action: 'hapusSantri', pin: ADMIN_PIN, nis: currentSantriNis });
   if (!d || d.error) { showToast('Gagal hapus!', true); return; }
   tutupModal('modalSantri');
   showToast('🗑️ Santri ' + s.nama + ' berhasil dihapus.');
@@ -997,6 +1055,7 @@ function bukaModalEdit() {
   if (!s) return;
   document.getElementById('eNama').value = s.nama || '';
   document.getElementById('eKelas').value = s.kelas || '';
+  document.getElementById('eJenis').value = s.jenis || 'Putra';
   document.getElementById('eNik').value = s.nik || '';
   document.getElementById('eAyah').value = s.ayah || '';
   document.getElementById('eIbu').value = s.ibu || '';
@@ -1017,7 +1076,8 @@ async function simpanEdit() {
   const nama = document.getElementById('eNama').value.trim();
   if (!nama) { showToast('Nama tidak boleh kosong!', true); return; }
   const data = {
-    action: 'editSantri', nis: currentSantriNis, nama,
+    action: 'editSantri', pin: ADMIN_PIN, nis: currentSantriNis, nama,
+    jenis: document.getElementById('eJenis').value,
     nik:   document.getElementById('eNik').value.trim(),
     ayah:  document.getElementById('eAyah').value.trim(),
     ibu:   document.getElementById('eIbu').value.trim(),
@@ -1040,7 +1100,7 @@ async function simpanEdit() {
   if (!d || d.error) { showToast(d?.error || 'Gagal menyimpan!', true); return; }
 
   const s = cSantri.find(x => x.nis === currentSantriNis);
-  if (s) Object.assign(s, { nama: data.nama, nik: data.nik, ayah: data.ayah, ibu: data.ibu, kelas: data.kelas, foto: data.foto, jalan: data.jalan, desa: data.desa, kecamatan: data.kecamatan, kabupaten: data.kabupaten, provinsi: data.provinsi, hp: data.hp, hafalan: data.hafalan, kehadiran: data.kehadiran, keaktifan: data.keaktifan });
+  if (s) Object.assign(s, { nama: data.nama, nik: data.nik, ayah: data.ayah, ibu: data.ibu, kelas: data.kelas, foto: data.foto, jalan: data.jalan, desa: data.desa, kecamatan: data.kecamatan, kabupaten: data.kabupaten, provinsi: data.provinsi, hp: data.hp, hafalan: data.hafalan, kehadiran: data.kehadiran, keaktifan: data.keaktifan, jenis: data.jenis });
 
   showToast('✅ Data santri berhasil diperbarui!');
   tutupModal('modalEdit');
@@ -1065,7 +1125,7 @@ async function simpanKoreksi() {
   if (isNaN(saldoBaru) || saldoBaru < 0) { showToast('Masukkan nominal saldo yang valid!', true); return; }
 
   setBtnLoading('btnSimpanKoreksi', true);
-  const d = await apiPost({ action: 'koreksiSaldo', nis: currentSantriNis, saldoBaru, alasan });
+  const d = await apiPost({ action: 'koreksiSaldo', pin: ADMIN_PIN, nis: currentSantriNis, saldoBaru, alasan });
   setBtnLoading('btnSimpanKoreksi', false);
   if (!d || d.error) { showToast(d?.error || 'Gagal!', true); return; }
 
@@ -1099,7 +1159,7 @@ function bukaHapusTrx(trxId, tipe, jumlah, keterangan) {
 async function konfirmasiHapusTrx() {
   if (!currentTrxHapus) return;
   setBtnLoading('btnKonfirmasiHapusTrx', true);
-  const d = await apiPost({ action: 'hapusTransaksi', nis: currentSantriNis, trxId: currentTrxHapus.trxId, tipe: currentTrxHapus.tipe, jumlah: currentTrxHapus.jumlah });
+  const d = await apiPost({ action: 'hapusTransaksi', pin: ADMIN_PIN, nis: currentSantriNis, trxId: currentTrxHapus.trxId, tipe: currentTrxHapus.tipe, jumlah: currentTrxHapus.jumlah });
   setBtnLoading('btnKonfirmasiHapusTrx', false);
   if (!d || d.error) { showToast(d?.error || 'Gagal hapus transaksi!', true); return; }
 
@@ -1143,18 +1203,79 @@ function renderCetak() {
     return;
   }
   [...cSantri].sort((a, b) => a.nama.localeCompare(b.nama)).forEach(s => {
+    const cont = document.createElement('div');
+    cont.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:6px;';
     const wrap = document.createElement('div');
+    wrap.id = 'kartu-' + s.nis;
     wrap.style.cssText = 'background:white;border-radius:10px;padding:14px;text-align:center;display:inline-flex;flex-direction:column;align-items:center;gap:6px;border:2px solid #1a7a4a;width:180px;';
     const qrDiv = document.createElement('div');
     wrap.appendChild(qrDiv);
     new QRCode(qrDiv, { text: qrPayload(s.nis), width: 120, height: 120, correctLevel: QRCode.CorrectLevel.H });
     wrap.insertAdjacentHTML('beforeend', `
       <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;color:#0d1f14;font-size:11px;max-width:150px;">${s.nama}</div>
-      <div style="font-family:monospace;color:#666;font-size:9px;">NIS: ${s.nis}</div>
+      <div style="font-family:monospace;color:#666;font-size:9px;">NIS: ${s.nis}${s.jenis ? ' · ' + s.jenis : ''}</div>
       <div style="font-size:9px;color:#1a7a4a;font-weight:600;">${s.kelas||''}</div>
       <div style="font-size:8px;color:#888;border-top:1px dashed #ccc;padding-top:4px;width:100%;">🕌 Pesantren Abu Hurairah Ra. (ARA)</div>`);
-    grid.appendChild(wrap);
+    cont.appendChild(wrap);
+
+    const safe = (s.nama || '').replace(/'/g, "\\'");
+    const btns = document.createElement('div');
+    btns.className = 'no-print';
+    btns.style.cssText = 'display:flex;gap:6px;';
+    btns.innerHTML =
+      `<button class="btn btn-outline btn-sm" onclick="downloadKartu('${s.nis}','${safe}')">⬇️ Download</button>` +
+      `<button class="btn btn-hijau btn-sm" onclick="bagikanKartu('${s.nis}','${safe}')">📲 Bagikan</button>`;
+    cont.appendChild(btns);
+    grid.appendChild(cont);
   });
+}
+
+async function _kartuKeCanvas(nis) {
+  const el = document.getElementById('kartu-' + nis);
+  if (!el || typeof html2canvas === 'undefined') return null;
+  return await html2canvas(el, { backgroundColor: '#ffffff', scale: 3 });
+}
+
+async function downloadKartu(nis, nama) {
+  showToast('⏳ Membuat gambar kartu...');
+  const canvas = await _kartuKeCanvas(nis);
+  if (!canvas) { showToast('Gagal membuat gambar.', true); return; }
+  const a = document.createElement('a');
+  a.href = canvas.toDataURL('image/png');
+  a.download = 'Kartu_' + (nama || nis).replace(/[^a-zA-Z0-9]/g, '_') + '_' + nis + '.png';
+  a.click();
+  showToast('✅ Kartu terunduh.');
+}
+
+async function bagikanKartu(nis, nama) {
+  const link = qrPayload(nis);
+  const teks = 'Kartu Santri a.n. ' + (nama || '') + '\nPantau saldo & perkembangan anak di pondok:\n' + link;
+  showToast('⏳ Menyiapkan...');
+  const canvas = await _kartuKeCanvas(nis);
+  if (!canvas) { return _bagikanTeks(teks); }
+  canvas.toBlob(async (blob) => {
+    const file = new File([blob], 'Kartu_' + nis + '.png', { type: 'image/png' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file], text: teks, title: 'Kartu Santri' }); }
+      catch (e) { /* dibatalkan user */ }
+    } else {
+      // Perangkat tidak bisa berbagi file → bagikan teks/link + unduh gambar
+      _bagikanTeks(teks);
+      const a = document.createElement('a');
+      a.href = canvas.toDataURL('image/png');
+      a.download = 'Kartu_' + nis + '.png';
+      a.click();
+    }
+  }, 'image/png');
+}
+
+function _bagikanTeks(teks) {
+  if (navigator.share) { navigator.share({ text: teks, title: 'Kartu Santri' }).catch(() => {}); return; }
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(teks).then(() => showToast('✅ Teks & link disalin. Tempel di WhatsApp.')).catch(() => showToast('Salin manual: ' + teks, true));
+  } else {
+    showToast('Salin manual: ' + teks, true);
+  }
 }
 
 // ==================== HELPER RENDER TRX ====================
