@@ -196,7 +196,9 @@ body.locked .admin-only{display:none!important;}
   <button class="tab-btn active" onclick="showPage('kasir')" id="tab-kasir">🔍 Kasir</button>
   <button class="tab-btn" onclick="showPage('santri')" id="tab-santri">📋 Santri</button>
   <button class="tab-btn" onclick="showPage('laporan')" id="tab-laporan">📊 Laporan</button>
+  <button class="tab-btn" onclick="showPage('rekap')" id="tab-rekap">🏪 Rekap Kantin</button>
   <button class="tab-btn admin-only" onclick="showPage('admin')" id="tab-admin">👑 Admin</button>
+  <button class="tab-btn admin-only" onclick="showPage('tagihan')" id="tab-tagihan">💳 Tagihan</button>
   <button class="tab-btn admin-only" onclick="showPage('cetak')" id="tab-cetak">🖨️ Cetak QR</button>
   <button class="tab-btn" onclick="showPage('pengaturan')" id="tab-pengaturan">⚙️ Pengaturan</button>
   <button class="tab-btn" onclick="toggleAdmin()" id="tab-lock" style="margin-left:auto;background:#3d2a0d;color:var(--emas-muda);">🔒 Mode Admin</button>
@@ -283,12 +285,29 @@ body.locked .admin-only{display:none!important;}
     <button class="btn btn-hijau" onclick="tambahCatatan()" id="btnCatatan">📒 Simpan Catatan</button>
     <p class="hint" style="margin-top:8px;">Catatan ini tampil di panel profil santri (yang dilihat orang tua saat scan QR). Untuk update "angka terkini" hafalan/kehadiran, gunakan <b>Edit Data</b> di tab Santri.</p>
   </div>
+
+  <div class="card">
+    <div class="card-title">🏪 Kelola Kantin / Koperasi</div>
+    <div class="form-row">
+      <div class="form-group"><label>NAMA KANTIN</label><input type="text" id="knNama" placeholder="cth: Koperasi Putra"/></div>
+      <div class="form-group"><label>PENGELOLA</label><input type="text" id="knPengelola" placeholder="Nama pengelola"/></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>NO. HP PENGELOLA</label><input type="text" id="knHp" placeholder="08xxxxxxxxxx"/></div>
+    </div>
+    <button class="btn btn-hijau" onclick="tambahKantin()" id="btnKantin">🏪 Tambah Kantin</button>
+    <div id="listKantin" style="margin-top:12px;"></div>
+  </div>
 </div>
 
 <!-- ======== KASIR ======== -->
 <div class="page active" id="page-kasir">
   <div class="card">
     <div class="card-title">🔍 Cari / Scan Santri</div>
+    <div class="form-group" style="margin-bottom:12px;">
+      <label>KANTIN / KOPERASI (perangkat ini)</label>
+      <select id="selKantinKasir" onchange="simpanKantinKasir()"><option value="">(Umum / belum dipilih)</option></select>
+    </div>
     <div class="scan-area">
       <div class="scan-icon">📷</div>
       <p style="font-size:12px;color:var(--teks2);margin-bottom:12px;">Scan QR pakai kamera, masukkan NIS, atau ketik nama santri</p>
@@ -378,6 +397,65 @@ body.locked .admin-only{display:none!important;}
       <button class="btn btn-outline btn-sm" onclick="muatLaporan()" style="margin-left:auto;">🔄</button>
     </div>
     <div id="listLaporan" class="trx-list"></div>
+  </div>
+</div>
+
+<!-- ======== TAGIHAN ======== -->
+<div class="page" id="page-tagihan">
+  <div class="card">
+    <div class="card-title">💳 Tarif (bisa diubah)</div>
+    <div class="form-row">
+      <div class="form-group"><label>SPP / BULAN (Rp)</label><input type="number" id="cfgSpp" placeholder="400000"/></div>
+      <div class="form-group"><label>LAUNDRY / BULAN (Rp)</label><input type="number" id="cfgLaundry" placeholder="135000"/></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>REGISTRASI ULANG (Rp)</label><input type="number" id="cfgReg" placeholder="500000"/></div>
+    </div>
+    <button class="btn btn-hijau" onclick="simpanConfig()" id="btnCfg">💾 Simpan Tarif</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🧾 Buat Tagihan</div>
+    <div class="form-row">
+      <div class="form-group"><label>BULAN (SPP + Laundry)</label><input type="month" id="tgBulan"/></div>
+    </div>
+    <button class="btn btn-emas" onclick="buatTagihanBulan()" id="btnBuatBulan">🧾 Buat Tagihan Bulan Ini</button>
+    <hr class="divider"/>
+    <div class="form-row">
+      <div class="form-group"><label>TAHUN (Registrasi Ulang)</label><input type="number" id="tgTahun" placeholder="2026"/></div>
+    </div>
+    <button class="btn btn-outline" onclick="buatTagihanRegistrasi()" id="btnBuatReg">🧾 Buat Tagihan Registrasi</button>
+    <p class="hint" style="margin-top:8px;">Membuat tagihan untuk SEMUA santri sekaligus. Aman ditekan berulang — tagihan yang sudah ada tidak akan dobel.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📋 Rekap & Tandai Lunas</div>
+    <div class="form-row">
+      <div class="form-group"><label>PERIODE</label><input type="text" id="tgRekapPeriode" placeholder="2026-06 atau 2026"/></div>
+      <div class="form-group"><label>FILTER</label>
+        <select id="tgFilter" onchange="renderDaftarTagihan()">
+          <option value="">Semua</option>
+          <option value="belum">⛔ Belum Bayar</option>
+          <option value="lunas">✅ Lunas</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn btn-hijau" onclick="lihatTagihan()" id="btnLihatTgh">📋 Tampilkan</button>
+    <div id="rekapTagihanRingkas" style="margin-top:14px;"></div>
+    <div id="daftarTagihan" class="trx-list" style="margin-top:10px;"></div>
+  </div>
+</div>
+
+<!-- ======== REKAP KANTIN ======== -->
+<div class="page" id="page-rekap">
+  <div class="card">
+    <div class="card-title">🏪 Rekap Kantin Bulanan</div>
+    <div class="form-row">
+      <div class="form-group"><label>KANTIN</label><select id="rkKantin"><option value="">-- Pilih Kantin --</option></select></div>
+      <div class="form-group"><label>BULAN</label><input type="month" id="rkBulan"/></div>
+    </div>
+    <button class="btn btn-hijau" onclick="lihatRekap()" id="btnRekap">📊 Lihat Rekap</button>
+    <div id="hasilRekap" style="margin-top:16px;"></div>
   </div>
 </div>
 
@@ -569,6 +647,7 @@ let currentSantriNis = null;
 let currentKasirNis = null;
 let MODE_ADMIN = false;
 let ADMIN_PIN = '';
+let cKantin = [];
 
 // ==================== INIT ====================
 window.onload = () => {
@@ -582,7 +661,13 @@ window.onload = () => {
   }
 };
 
-function mulaiMuat() { muatStats(); muatSantri(); }
+function mulaiMuat() { muatStats(); muatSantri(); muatKantin(); muatConfig(); setDefaultPeriode(); }
+function setDefaultPeriode() {
+  const d = new Date();
+  const ym = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+  const isi = (id, v) => { const el = document.getElementById(id); if (el && !el.value) el.value = v; };
+  isi('rkBulan', ym); isi('tgBulan', ym); isi('tgRekapPeriode', ym); isi('tgTahun', d.getFullYear());
+}
 
 // ==================== MODE ADMIN / KASIR ====================
 async function toggleAdmin() {
@@ -765,6 +850,187 @@ async function tambahCatatan() {
   document.getElementById('cIsi').value = '';
 }
 
+// ==================== KANTIN / KOPERASI ====================
+async function muatKantin() {
+  const d = await apiGet({ action: 'getKantin' });
+  cKantin = (d && d.kantin) ? d.kantin : [];
+  const selK = document.getElementById('selKantinKasir');
+  if (selK) {
+    const tersimpan = localStorage.getItem('ara_kantin') || '';
+    selK.innerHTML = '<option value="">(Umum / belum dipilih)</option>' +
+      cKantin.map(k => `<option value="${k.nama}">${k.nama}${k.pengelola ? ' — ' + k.pengelola : ''}</option>`).join('');
+    selK.value = tersimpan;
+  }
+  const rk = document.getElementById('rkKantin');
+  if (rk) {
+    const cur = rk.value;
+    rk.innerHTML = '<option value="">-- Pilih Kantin --</option>' +
+      cKantin.map(k => `<option value="${k.nama}">${k.nama}</option>`).join('');
+    rk.value = cur;
+  }
+  renderListKantin();
+}
+
+function simpanKantinKasir() {
+  localStorage.setItem('ara_kantin', document.getElementById('selKantinKasir').value);
+  showToast('✅ Kantin diset untuk perangkat ini.');
+}
+
+function renderListKantin() {
+  const el = document.getElementById('listKantin');
+  if (!el) return;
+  if (!cKantin.length) { el.innerHTML = '<div class="hint">Belum ada kantin terdaftar.</div>'; return; }
+  el.innerHTML = cKantin.map(k => `<div class="trx-item">
+    <div class="trx-icon topup">🏪</div>
+    <div class="trx-info"><div class="trx-nama">${k.nama}</div><div class="trx-detail">${k.pengelola||'-'}${k.hp?' • '+k.hp:''}</div></div>
+    <button class="btn btn-merah btn-sm" onclick="hapusKantin('${k.id}','${(k.nama||'').replace(/'/g,"\\'")}')">🗑️</button>
+  </div>`).join('');
+}
+
+async function tambahKantin() {
+  const nama = document.getElementById('knNama').value.trim();
+  if (!nama) { showToast('Nama kantin wajib!', true); return; }
+  setBtnLoading('btnKantin', true);
+  const d = await apiPost({
+    action: 'tambahKantin', pin: ADMIN_PIN, nama,
+    pengelola: document.getElementById('knPengelola').value.trim(),
+    hp: document.getElementById('knHp').value.trim()
+  });
+  setBtnLoading('btnKantin', false);
+  if (!d || d.error) { showToast(d?.error || 'Gagal!', true); return; }
+  showToast('✅ Kantin "' + nama + '" ditambahkan.');
+  ['knNama','knPengelola','knHp'].forEach(id => document.getElementById(id).value = '');
+  await muatKantin();
+}
+
+async function hapusKantin(id, nama) {
+  if (!confirm('Hapus kantin "' + nama + '"? (Data transaksi lama tetap ada.)')) return;
+  const d = await apiPost({ action: 'hapusKantin', pin: ADMIN_PIN, id });
+  if (!d || d.error) { showToast(d?.error || 'Gagal!', true); return; }
+  showToast('🗑️ Kantin dihapus.');
+  await muatKantin();
+}
+
+async function lihatRekap() {
+  const kantin = document.getElementById('rkKantin').value;
+  const bulan = document.getElementById('rkBulan').value; // 'YYYY-MM'
+  if (!kantin) { showToast('Pilih kantin dulu!', true); return; }
+  setBtnLoading('btnRekap', true);
+  const d = await apiGet({ action: 'rekapKantin', kantin, bulan });
+  setBtnLoading('btnRekap', false);
+  if (!d || d.error) { showToast(d?.error || 'Gagal!', true); document.getElementById('hasilRekap').innerHTML = ''; return; }
+  renderRekap(d);
+}
+
+function renderRekap(d) {
+  const el = document.getElementById('hasilRekap');
+  const totalMinus = (d.minus || []).reduce((a, b) => a + b.saldo, 0);
+  const barang = (d.barang || []).length
+    ? d.barang.map(b => `<div class="trx-item"><div class="trx-info"><div class="trx-nama">${b.nama}</div><div class="trx-detail">${b.qty}x terjual</div></div><div class="trx-jumlah plus">${fRp(b.subtotal)}</div></div>`).join('')
+    : '<div class="empty-state" style="padding:14px"><div>Belum ada penjualan periode ini</div></div>';
+  const minus = (d.minus || []).length
+    ? d.minus.map(m => `<div class="trx-item"><div class="trx-info"><div class="trx-nama">${m.nama}</div><div class="trx-detail">NIS: ${m.nis}</div></div><div class="trx-jumlah minus">${fRp(m.saldo)}</div></div>`).join('')
+    : '<div class="empty-state" style="padding:14px"><div>Tidak ada santri minus 👍</div></div>';
+  el.innerHTML = `
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-val">${fRp(d.totalOmzet)}</div><div class="stat-label">Total Omzet</div></div>
+      <div class="stat-card"><div class="stat-val">${d.jumlahTrx}</div><div class="stat-label">Transaksi</div></div>
+      <div class="stat-card"><div class="stat-val" style="color:var(--merah-muda)">${fRp(totalMinus)}</div><div class="stat-label">Total Minus Santri</div></div>
+    </div>
+    <div class="card-title" style="margin-top:6px;">🛒 Barang Terjual</div>
+    <div class="trx-list">${barang}</div>
+    <div class="card-title" style="margin-top:14px;">🔴 Santri Minus (${(d.minus||[]).length})</div>
+    <div class="trx-list">${minus}</div>`;
+}
+
+// ==================== TAGIHAN (Fase 3) ====================
+let cConfig = {};
+let cTagihan = [];
+
+async function muatConfig() {
+  const d = await apiGet({ action: 'getConfig' });
+  cConfig = (d && d.config) ? d.config : {};
+  const set = (id, v) => { const el = document.getElementById(id); if (el && v !== undefined && v !== '') el.value = v; };
+  set('cfgSpp', cConfig.SPP);
+  set('cfgLaundry', cConfig.LAUNDRY);
+  set('cfgReg', cConfig.REGISTRASI);
+}
+
+async function simpanConfig() {
+  setBtnLoading('btnCfg', true);
+  const d = await apiPost({ action: 'simpanConfig', pin: ADMIN_PIN,
+    spp: document.getElementById('cfgSpp').value,
+    laundry: document.getElementById('cfgLaundry').value,
+    registrasi: document.getElementById('cfgReg').value });
+  setBtnLoading('btnCfg', false);
+  if (!d || d.error) { showToast(d?.error || 'Gagal!', true); return; }
+  showToast('✅ Tarif disimpan.');
+  muatConfig();
+}
+
+async function buatTagihanBulan() {
+  const periode = document.getElementById('tgBulan').value;
+  if (!periode) { showToast('Pilih bulan dulu!', true); return; }
+  if (!confirm('Buat tagihan SPP + Laundry untuk SEMUA santri periode ' + periode + '?')) return;
+  setBtnLoading('btnBuatBulan', true);
+  const d = await apiPost({ action: 'buatTagihanBulan', pin: ADMIN_PIN, periode });
+  setBtnLoading('btnBuatBulan', false);
+  if (!d || d.error) { showToast(d?.error || 'Gagal!', true); return; }
+  showToast('✅ ' + d.dibuat + ' tagihan baru dibuat untuk ' + periode + '.');
+}
+
+async function buatTagihanRegistrasi() {
+  const periode = String(document.getElementById('tgTahun').value).trim();
+  if (!periode) { showToast('Isi tahun dulu!', true); return; }
+  if (!confirm('Buat tagihan Registrasi untuk SEMUA santri tahun ' + periode + '?')) return;
+  setBtnLoading('btnBuatReg', true);
+  const d = await apiPost({ action: 'buatTagihanRegistrasi', pin: ADMIN_PIN, periode });
+  setBtnLoading('btnBuatReg', false);
+  if (!d || d.error) { showToast(d?.error || 'Gagal!', true); return; }
+  showToast('✅ ' + d.dibuat + ' tagihan registrasi dibuat.');
+}
+
+async function lihatTagihan() {
+  const periode = document.getElementById('tgRekapPeriode').value.trim();
+  setBtnLoading('btnLihatTgh', true);
+  const d = await apiGet({ action: 'rekapTagihan', periode });
+  setBtnLoading('btnLihatTgh', false);
+  if (!d || d.error) { showToast(d?.error || 'Gagal!', true); return; }
+  cTagihan = d.daftar || [];
+  document.getElementById('rekapTagihanRingkas').innerHTML = `
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-val" style="color:#2ecc71">${fRp(d.terkumpul)}</div><div class="stat-label">Terkumpul (${d.jmlLunas})</div></div>
+      <div class="stat-card"><div class="stat-val" style="color:var(--merah-muda)">${fRp(d.tunggakan)}</div><div class="stat-label">Tunggakan (${d.jmlBelum})</div></div>
+    </div>`;
+  renderDaftarTagihan();
+}
+
+function renderDaftarTagihan() {
+  const f = document.getElementById('tgFilter').value;
+  let list = cTagihan;
+  if (f === 'belum') list = cTagihan.filter(t => t.status !== 'Lunas');
+  if (f === 'lunas') list = cTagihan.filter(t => t.status === 'Lunas');
+  const el = document.getElementById('daftarTagihan');
+  if (!list.length) { el.innerHTML = '<div class="empty-state" style="padding:14px"><div>Tidak ada tagihan</div></div>'; return; }
+  el.innerHTML = list.map(t => {
+    const lunas = t.status === 'Lunas';
+    return `<div class="trx-item">
+      <div class="trx-icon ${lunas?'topup':'belanja'}">${lunas?'✅':'⛔'}</div>
+      <div class="trx-info"><div class="trx-nama">${t.nama}</div><div class="trx-detail">${t.jenis} ${t.periode} • ${fRp(t.nominal)}</div></div>
+      <button class="btn btn-sm ${lunas?'btn-outline':'btn-hijau'}" onclick="tandaiLunasTgh('${t.id}',${!lunas})">${lunas?'Batal':'Lunas'}</button>
+    </div>`;
+  }).join('');
+}
+
+async function tandaiLunasTgh(id, lunas) {
+  const d = await apiPost({ action: 'tandaiLunas', pin: ADMIN_PIN, id, lunas });
+  if (!d || d.error) { showToast(d?.error || 'Gagal!', true); return; }
+  const t = cTagihan.find(x => x.id === id);
+  if (t) t.status = lunas ? 'Lunas' : 'Belum';
+  showToast(lunas ? '✅ Ditandai lunas.' : '↩️ Dibatalkan (belum bayar).');
+  renderDaftarTagihan();
+}
+
 // ==================== KASIR ====================
 // Ambil NIS dari hasil scan (QR berisi URL ?nis=... ATAU NIS polos)
 function ekstrakNis(input) {
@@ -898,7 +1164,7 @@ async function prosesBelanja() {
   const keterangan = document.getElementById('kKet').value || 'Belanja';
 
   setBtnLoading('btnBelanja', true);
-  const d = await apiPost({ action: 'belanja', nis: currentKasirNis, items: JSON.stringify(items), total, keterangan });
+  const d = await apiPost({ action: 'belanja', nis: currentKasirNis, items: JSON.stringify(items), total, keterangan, kantin: document.getElementById('selKantinKasir').value });
   setBtnLoading('btnBelanja', false);
   if (!d || d.error) { showToast(d?.error || 'Gagal!', true); return; }
 
