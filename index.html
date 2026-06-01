@@ -403,6 +403,15 @@ body.locked .admin-only{display:none!important;}
 <!-- ======== TAGIHAN ======== -->
 <div class="page" id="page-tagihan">
   <div class="card">
+    <div class="card-title">💳 Bayar / Cek Tagihan Santri</div>
+    <div class="form-group" style="margin-bottom:10px;">
+      <label>PILIH SANTRI</label>
+      <select id="selBayar" onchange="muatTagihanSantri()"><option value="">-- Pilih Santri --</option></select>
+    </div>
+    <div id="tagihanSantri"></div>
+  </div>
+
+  <div class="card">
     <div class="card-title">💳 Tarif (bisa diubah)</div>
     <div class="form-row">
       <div class="form-group"><label>SPP / BULAN (Rp)</label><input type="number" id="cfgSpp" placeholder="400000"/></div>
@@ -946,6 +955,57 @@ function renderRekap(d) {
 // ==================== TAGIHAN (Fase 3) ====================
 let cConfig = {};
 let cTagihan = [];
+
+async function muatTagihanSantri() {
+  const nis = document.getElementById('selBayar').value;
+  const el = document.getElementById('tagihanSantri');
+  if (!nis) { el.innerHTML = ''; return; }
+  el.innerHTML = '<div class="hint">Memuat tagihan...</div>';
+  const d = await apiGet({ action: 'getTagihan', nis });
+  const list = (d && d.tagihan) ? d.tagihan : [];
+  if (!list.length) {
+    el.innerHTML = '<div class="empty-state" style="padding:14px"><div>Belum ada tagihan untuk santri ini.</div><div class="hint" style="margin-top:6px">Buat dulu lewat "Buat Tagihan" di bawah.</div></div>';
+    return;
+  }
+  const belum = list.filter(t => t.status !== 'Lunas');
+  const totalBelum = belum.reduce((a, t) => a + t.nominal, 0);
+  const ringkas = belum.length
+    ? `<div class="stat-box" style="border-color:#e74c3c;margin-bottom:10px;"><div class="stat-lbl">TUNGGAKAN</div><div class="stat-val" style="color:#ff6b6b">${fRp(totalBelum)}</div><div class="stat-lbl">${belum.length} tagihan belum dibayar</div></div>
+       <button class="btn btn-emas btn-full" id="btnBayarSemua" onclick="bayarSemua()" style="margin-bottom:12px;">✅ Bayarkan Semua yang Belum (${fRp(totalBelum)})</button>`
+    : `<div class="stat-box" style="border-color:#1a7a4a;margin-bottom:10px;"><div class="stat-lbl">STATUS</div><div class="stat-val" style="color:#2ecc71">✅ Semua Lunas</div></div>`;
+  const rows = list.map(t => {
+    const lunas = t.status === 'Lunas';
+    return `<div class="trx-item">
+      <div class="trx-icon ${lunas?'topup':'belanja'}">${lunas?'✅':'⛔'}</div>
+      <div class="trx-info"><div class="trx-nama">${t.jenis} — ${t.periode}</div><div class="trx-detail">${fRp(t.nominal)}${lunas && t.tglBayar ? ' • dibayar ' + fTgl(t.tglBayar) : ''}</div></div>
+      <button class="btn btn-sm ${lunas?'btn-outline':'btn-hijau'}" onclick="bayarTagihan('${t.id}',${!lunas})">${lunas?'Batal':'Bayar'}</button>
+    </div>`;
+  }).join('');
+  el.innerHTML = ringkas + '<div class="trx-list">' + rows + '</div>';
+}
+
+async function bayarTagihan(id, lunas) {
+  const d = await apiPost({ action: 'tandaiLunas', pin: ADMIN_PIN, id, lunas });
+  if (!d || d.error) { showToast(d?.error || 'Gagal!', true); return; }
+  showToast(lunas ? '✅ Pembayaran dicatat (Lunas).' : '↩️ Status dikembalikan ke Belum.');
+  muatTagihanSantri();
+}
+
+async function bayarSemua() {
+  const nis = document.getElementById('selBayar').value;
+  if (!nis) return;
+  const d = await apiGet({ action: 'getTagihan', nis });
+  const belum = ((d && d.tagihan) || []).filter(t => t.status !== 'Lunas');
+  if (!belum.length) { showToast('Tidak ada tunggakan.'); return; }
+  if (!confirm('Tandai LUNAS semua ' + belum.length + ' tagihan santri ini?')) return;
+  setBtnLoading('btnBayarSemua', true);
+  for (const t of belum) {
+    await apiPost({ action: 'tandaiLunas', pin: ADMIN_PIN, id: t.id, lunas: true });
+  }
+  setBtnLoading('btnBayarSemua', false);
+  showToast('✅ Semua tagihan ditandai lunas.');
+  muatTagihanSantri();
+}
 
 async function muatConfig() {
   const d = await apiGet({ action: 'getConfig' });
@@ -1638,7 +1698,7 @@ function updateSelectSantri() {
   const opts = '<option value="">-- Pilih Santri --</option>' +
     [...cSantri].sort((a, b) => a.nama.localeCompare(b.nama))
       .map(s => `<option value="${s.nis}">${s.nama}${s.kelas ? ' (' + s.kelas + ')' : ''}</option>`).join('');
-  ['selTopup', 'selCatatan'].forEach(id => {
+  ['selTopup', 'selCatatan', 'selBayar'].forEach(id => {
     const sel = document.getElementById(id);
     if (!sel) return;
     const cur = sel.value;
