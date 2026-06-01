@@ -78,6 +78,12 @@ input::placeholder{color:#4a7a5a;}
 .santri-saldo.rendah{color:var(--merah-muda);}
 .santri-kamar{font-size:10px;color:var(--teks2);margin-top:3px;}
 .santri-alamat{font-size:10px;color:var(--teks2);margin-top:3px;line-height:1.4;}
+.santri-card.putra::before{background:linear-gradient(90deg,#2563eb,#38bdf8)!important;}
+.santri-card.putri::before{background:linear-gradient(90deg,#ec4899,#f9a8d4)!important;}
+.santri-card.putra .santri-foto,.santri-card.putra .santri-foto-kosong{border:2px solid #2563eb;background:linear-gradient(135deg,#1e3a8a,#3b82f6);}
+.santri-card.putri .santri-foto,.santri-card.putri .santri-foto-kosong{border:2px solid #ec4899;background:linear-gradient(135deg,#831843,#ec4899);}
+.badge-putra{background:rgba(37,99,235,.18);color:#7cb3ff;border:1px solid rgba(37,99,235,.45);}
+.badge-putri{background:rgba(236,72,153,.18);color:#f9a8d4;border:1px solid rgba(236,72,153,.45);}
 .badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;}
 .badge-hijau{background:rgba(46,204,113,.15);color:var(--hijau-terang);border:1px solid rgba(46,204,113,.3);}
 .badge-merah{background:rgba(231,76,60,.15);color:var(--merah-muda);border:1px solid rgba(231,76,60,.3);}
@@ -835,6 +841,7 @@ async function cariKasir() {
   document.getElementById('kSaldo').textContent = fRp(s.saldo);
   document.getElementById('kSaldo').className = 'profil-saldo' + (s.saldo < 50000 ? ' rendah' : '');
   setAvatar(document.getElementById('kAvatar'), s.foto);
+  ringAvatar(document.getElementById('kAvatar'), s.jenis);
 
   resetItemBelanja();
   document.getElementById('kKet').value = '';
@@ -944,19 +951,24 @@ function renderSantri() {
     const pct = Math.max(0, Math.min(100, (s.saldo / 200000) * 100));
     const rendah = s.saldo < 50000;
     const minus = s.saldo < 0;
+    const jcls = s.jenis === 'Putri' ? 'putri' : (s.jenis === 'Putra' ? 'putra' : '');
     const foto = s.foto
       ? `<img class="santri-foto" src="${konversiFoto(s.foto)}" alt=""/>`
       : `<div class="santri-foto-kosong">🧑‍🎓</div>`;
     const al = alamatRingkas(s);
-    return `<div class="santri-card" onclick="bukaModal('${s.nis}')">
+    const jenisBadge = s.jenis ? `<span class="badge badge-${jcls}">${s.jenis === 'Putri' ? '👧 Putri' : '👦 Putra'}</span>` : '';
+    return `<div class="santri-card ${jcls}" onclick="bukaModal('${s.nis}')">
       <div class="santri-top">${foto}
         <div><div class="santri-nama">${s.nama}</div><div class="santri-id">NIS: ${s.nis}</div></div>
       </div>
       <div class="santri-saldo ${rendah?'rendah':''}">${fRp(s.saldo)}</div>
       <div class="saldo-bar-wrap"><div class="saldo-bar-fill" style="width:${pct}%;background:${rendah?'#e74c3c':'#2ecc71'}"></div><div class="saldo-bar-bg"></div></div>
-      <div class="santri-kamar">${s.kelas || '–'}${s.jenis ? ' · ' + s.jenis : ''}</div>
+      <div class="santri-kamar">${s.kelas || '–'}</div>
       ${al ? `<div class="santri-alamat">📍 ${al}</div>` : ''}
-      <div style="margin-top:6px;">${minus?'<span class="badge badge-merah">🔴 Minus</span>':rendah?'<span class="badge badge-merah">⚠️ Saldo Rendah</span>':'<span class="badge badge-hijau">✅ Cukup</span>'}</div>
+      <div style="margin-top:6px;display:flex;gap:5px;flex-wrap:wrap;">
+        ${jenisBadge}
+        ${minus?'<span class="badge badge-merah">🔴 Minus</span>':rendah?'<span class="badge badge-merah">⚠️ Rendah</span>':'<span class="badge badge-hijau">✅ Cukup</span>'}
+      </div>
     </div>`;
   }).join('');
 }
@@ -966,6 +978,8 @@ function setAvatar(el, fotoUrl) {
   if (u) el.innerHTML = `<img src="${u}" alt=""/>`;
   else el.innerHTML = '🧑‍🎓';
 }
+function warnaJenis(j) { return j === 'Putri' ? '#ec4899' : (j === 'Putra' ? '#2563eb' : ''); }
+function ringAvatar(el, jenis) { const w = warnaJenis(jenis); if (el) el.style.boxShadow = w ? '0 0 0 3px ' + w : 'none'; }
 
 // ==================== MODAL SANTRI ====================
 async function bukaModal(nis) {
@@ -980,6 +994,7 @@ async function bukaModal(nis) {
   document.getElementById('mSaldo').textContent = fRp(s.saldo);
   document.getElementById('mSaldo').className = 'profil-saldo' + (s.saldo < 50000 ? ' rendah' : '');
   setAvatar(document.getElementById('mAvatar'), s.foto);
+  ringAvatar(document.getElementById('mAvatar'), s.jenis);
   const al = [s.jalan, s.desa, s.kecamatan, s.kabupaten, s.provinsi].filter(Boolean).join(', ');
   document.getElementById('mAlamat').innerHTML = '📍 ' + (al || 'Alamat belum diisi');
   const baris = [];
@@ -1205,16 +1220,17 @@ function renderCetak() {
   [...cSantri].sort((a, b) => a.nama.localeCompare(b.nama)).forEach(s => {
     const cont = document.createElement('div');
     cont.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:6px;';
+    const warna = s.jenis === 'Putri' ? '#ec4899' : (s.jenis === 'Putra' ? '#2563eb' : '#1a7a4a');
     const wrap = document.createElement('div');
     wrap.id = 'kartu-' + s.nis;
-    wrap.style.cssText = 'background:white;border-radius:10px;padding:14px;text-align:center;display:inline-flex;flex-direction:column;align-items:center;gap:6px;border:2px solid #1a7a4a;width:180px;';
+    wrap.style.cssText = 'background:white;border-radius:10px;padding:14px;text-align:center;display:inline-flex;flex-direction:column;align-items:center;gap:6px;border:2px solid ' + warna + ';width:180px;';
     const qrDiv = document.createElement('div');
     wrap.appendChild(qrDiv);
     new QRCode(qrDiv, { text: qrPayload(s.nis), width: 120, height: 120, correctLevel: QRCode.CorrectLevel.H });
     wrap.insertAdjacentHTML('beforeend', `
       <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;color:#0d1f14;font-size:11px;max-width:150px;">${s.nama}</div>
       <div style="font-family:monospace;color:#666;font-size:9px;">NIS: ${s.nis}${s.jenis ? ' · ' + s.jenis : ''}</div>
-      <div style="font-size:9px;color:#1a7a4a;font-weight:600;">${s.kelas||''}</div>
+      <div style="font-size:9px;color:${warna};font-weight:600;">${s.kelas||''}</div>
       <div style="font-size:8px;color:#888;border-top:1px dashed #ccc;padding-top:4px;width:100%;">🕌 Pesantren Abu Hurairah Ra. (ARA)</div>`);
     cont.appendChild(wrap);
 
