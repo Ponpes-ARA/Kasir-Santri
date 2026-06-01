@@ -977,8 +977,9 @@ async function muatTagihanSantri() {
     const lunas = t.status === 'Lunas';
     return `<div class="trx-item">
       <div class="trx-icon ${lunas?'topup':'belanja'}">${lunas?'✅':'⛔'}</div>
-      <div class="trx-info"><div class="trx-nama">${t.jenis} — ${t.periode}</div><div class="trx-detail">${fRp(t.nominal)}${lunas && t.tglBayar ? ' • dibayar ' + fTgl(t.tglBayar) : ''}</div></div>
+      <div class="trx-info"><div class="trx-nama">${t.jenis} — ${fPeriode(t.periode)}</div><div class="trx-detail">${fRp(t.nominal)}${lunas && t.tglBayar ? ' • dibayar ' + fTgl(t.tglBayar) : ''}</div></div>
       <button class="btn btn-sm ${lunas?'btn-outline':'btn-hijau'}" onclick="bayarTagihan('${t.id}',${!lunas})">${lunas?'Batal':'Bayar'}</button>
+      <button class="btn btn-merah btn-sm" style="padding:5px 8px;" onclick="hapusTagihanSantri('${t.id}')">🗑️</button>
     </div>`;
   }).join('');
   el.innerHTML = ringkas + '<div class="trx-list">' + rows + '</div>';
@@ -988,6 +989,14 @@ async function bayarTagihan(id, lunas) {
   const d = await apiPost({ action: 'tandaiLunas', pin: ADMIN_PIN, id, lunas });
   if (!d || d.error) { showToast(d?.error || 'Gagal!', true); return; }
   showToast(lunas ? '✅ Pembayaran dicatat (Lunas).' : '↩️ Status dikembalikan ke Belum.');
+  muatTagihanSantri();
+}
+
+async function hapusTagihanSantri(id) {
+  if (!confirm('Hapus tagihan ini? (untuk membersihkan tagihan dobel/salah)')) return;
+  const d = await apiPost({ action: 'hapusTagihan', pin: ADMIN_PIN, id });
+  if (!d || d.error) { showToast(d?.error || 'Gagal!', true); return; }
+  showToast('🗑️ Tagihan dihapus.');
   muatTagihanSantri();
 }
 
@@ -1076,7 +1085,7 @@ function renderDaftarTagihan() {
     const lunas = t.status === 'Lunas';
     return `<div class="trx-item">
       <div class="trx-icon ${lunas?'topup':'belanja'}">${lunas?'✅':'⛔'}</div>
-      <div class="trx-info"><div class="trx-nama">${t.nama}</div><div class="trx-detail">${t.jenis} ${t.periode} • ${fRp(t.nominal)}</div></div>
+      <div class="trx-info"><div class="trx-nama">${t.nama}</div><div class="trx-detail">${t.jenis} ${fPeriode(t.periode)} • ${fRp(t.nominal)}</div></div>
       <button class="btn btn-sm ${lunas?'btn-outline':'btn-hijau'}" onclick="tandaiLunasTgh('${t.id}',${!lunas})">${lunas?'Batal':'Lunas'}</button>
     </div>`;
   }).join('');
@@ -1687,6 +1696,11 @@ function konversiFoto(url) {
 function fRp(n) {
   n = Number(n) || 0;
   return (n < 0 ? '-Rp ' : 'Rp ') + Math.abs(n).toLocaleString('id-ID');
+}
+function fPeriode(p) {
+  const m = String(p).match(/^(\d{4})-(\d{2})$/);
+  if (m) { const b = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']; return b[parseInt(m[2]) - 1] + ' ' + m[1]; }
+  return String(p);
 }
 function fTgl(iso) {
   if (!iso) return '–';
