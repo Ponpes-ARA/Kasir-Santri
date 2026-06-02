@@ -250,9 +250,10 @@ body.locked .admin-only{display:none!important;}
       <div class="form-group"><label>NO. HP ORANG TUA</label><input type="text" id="iHp" placeholder="08123456789"/></div>
     </div>
     <div class="form-row">
-      <div class="form-group"><label>SALDO AWAL (Rp)</label><input type="number" id="iSaldo" placeholder="100000" min="0"/></div>
+      <div class="form-group"><label>SALDO AWAL (Rp)</label><input type="number" id="iSaldo" placeholder="100000 (boleh minus: -50000)"/></div>
     </div>
     <button class="btn btn-hijau" onclick="tambahSantri()" id="btnTambah">➕ Tambah Santri</button>
+    <p class="hint" style="margin-top:8px;">Untuk santri lama: isi <b>Saldo Awal</b> sesuai saldo terakhirnya. Boleh <b>minus</b> (mis. <b>-50000</b>) jika sudah punya tunggakan jajan. Santri baru cukup isi 0 atau setoran awal.</p>
   </div>
 
   <div class="card">
